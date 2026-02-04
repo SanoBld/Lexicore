@@ -3,30 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>LEXICORE V2 | Terminal Sémantique</title>
+    <title>LEXICORE V3.0 | Sémantique Avancée</title>
     <meta name="theme-color" content="#050508">
-    <meta name="description" content="Système de déduction sémantique. Version 2.2.">
+    <meta name="description" content="Système de déduction sémantique. Version 3.0.">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div id="noise-layer" class="noise-overlay"></div>
-    <div id="glow-layer" class="glow-spot"></div>
+    <div id="nebula-layer" class="nebula-container">
+        <div class="nebula-glow"></div>
+    </div>
+    <div class="noise-texture"></div>
 
     <main class="app-container">
         
         <section id="view-terminal" class="view active">
             <header class="view-header">
-                <div class="brand">LEXI<span class="brand-accent">CORE</span> <span class="version-tag">V2.2</span></div>
+                <div class="brand">LEXI<span class="brand-accent">CORE</span> <span class="version-tag">V3.0</span></div>
                 <div class="status-badge" id="day-badge">INIT...</div>
             </header>
 
             <div class="game-interface">
                 <div id="feedback-card" class="glass-panel hidden">
                     <div class="card-top">
-                        <span class="label">ANALYSE SÉQUENCE</span>
+                        <span class="label">ANALYSE SPECTRALE</span>
                         <span class="temp-icon" id="temp-icon">❄️</span>
                     </div>
                     <div class="word-feedback" id="feedback-word">---</div>
@@ -39,14 +41,14 @@
                     
                     <div class="feedback-footer">
                         <div class="temp-value" id="feedback-temp">0.00%</div>
-                        <div id="ambience-display" class="ambience-text">ATTENTE SIGNAL...</div>
+                        <div id="ambience-display" class="ambience-text">SYSTÈME EN ATTENTE...</div>
                     </div>
                 </div>
 
                 <form id="guess-form" class="input-group glass-panel">
-                    <input type="text" id="guess-input" placeholder="ENTRER MOT..." autocomplete="off" spellcheck="false" enterkeyhint="go">
+                    <input type="text" id="guess-input" placeholder="ENTRER SÉQUENCE..." autocomplete="off" spellcheck="false" enterkeyhint="go">
                     <button type="submit" id="submit-btn" aria-label="Valider">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
                     <div id="autocomplete-list" class="autocomplete-items hidden"></div>
                 </form>
@@ -57,7 +59,7 @@
 
         <section id="view-logs" class="view">
             <header class="view-header">
-                <h2>DONNÉES SYSTÈME</h2>
+                <h2>DONNÉES</h2>
             </header>
             
             <div class="stats-grid">
@@ -70,27 +72,27 @@
                     <span class="stat-value" id="stat-wins">0</span>
                 </div>
                 <div class="stat-box glass-panel">
-                    <span class="stat-label">STREAK</span>
+                    <span class="stat-label">SÉRIE</span>
                     <span class="stat-value" id="stat-streak">0</span>
                 </div>
             </div>
 
             <div class="history-container">
-                <h3 class="section-subtitle">JOURNAL D'ACTIVITÉ</h3>
+                <h3 class="section-subtitle">HISTORIQUE</h3>
                 <ul id="full-history-list" class="log-list"></ul>
             </div>
         </section>
 
         <section id="view-system" class="view">
             <header class="view-header">
-                <h2>CONFIG. SYSTÈME</h2>
+                <h2>SYSTÈME</h2>
             </header>
             
             <div class="settings-list glass-panel">
                 <div class="setting-item">
                     <div class="setting-info">
-                        <span class="setting-name">Synthèse Audio</span>
-                        <small>Génération procédurale (WebAudio)</small>
+                        <span class="setting-name">Audio Procédural</span>
+                        <small>Synthèse sonore WebAudio</small>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="setting-audio">
@@ -100,26 +102,28 @@
 
                 <div class="setting-item">
                     <div class="setting-info">
+                        <span class="setting-name">Retour Haptique</span>
+                        <small>Vibrations physiques</small>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-haptic">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
                         <span class="setting-name">Mode Performance</span>
-                        <small>Réduire les effets visuels (Éco)</small>
+                        <small>Désactiver l'effet Nebula</small>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="setting-perf">
                         <span class="slider"></span>
                     </label>
                 </div>
-<div class="setting-item">
-    <div class="setting-info">
-        <span class="setting-name">Retour Haptique</span>
-        <small>Vibrations lors des interactions</small>
-    </div>
-    <label class="switch">
-        <input type="checkbox" id="setting-haptic">
-        <span class="slider"></span>
-    </label>
-</div>
+
                 <div class="setting-group-vertical">
-                    <span class="setting-name">Thème Interface</span>
+                    <span class="setting-name">Thème UI</span>
                     <div class="theme-selector">
                         <button class="theme-btn active" data-theme="auto">AUTO</button>
                         <button class="theme-btn" data-theme="dark">SOMBRE</button>
@@ -128,13 +132,13 @@
                 </div>
 
                 <div class="setting-actions">
-                    <button id="btn-reset" class="danger-btn">⚠️ FORMATAGE SYSTÈME</button>
+                    <button id="btn-reset" class="danger-btn">RÉINITIALISER DONNÉES</button>
                 </div>
             </div>
             
             <div class="credits">
-                <p>LEXICORE OS • V2.2.0</p>
-                <p class="blink">STATUS: ONLINE</p>
+                <p>LEXICORE V3.0 // SYSTEM READY</p>
+                <p class="status-dot">● ONLINE</p>
             </div>
         </section>
     </main>
@@ -150,15 +154,15 @@
         </button>
         <button class="nav-btn" data-target="view-system">
             <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            <span class="nav-label">SYSTEM</span>
+            <span class="nav-label">SYSTÈME</span>
         </button>
     </nav>
 
     <div id="victory-modal" class="modal hidden">
         <div class="modal-content glass-panel victory-style">
-            <h2 class="glitch-text">SÉQUENCE VALIDÉE</h2>
-            <div class="victory-word" id="victory-word">MOT</div>
-            <button id="close-victory" class="action-btn">FERMER SESSION</button>
+            <h2>SÉQUENCE VALIDÉE</h2>
+            <div class="victory-word" id="victory-word">---</div>
+            <button id="close-victory" class="action-btn">TERMINER LA SESSION</button>
         </div>
         <div class="modal-backdrop"></div>
     </div>
