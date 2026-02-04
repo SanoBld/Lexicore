@@ -22,142 +22,223 @@ const dictionary = [
     "TABAC", "TABLE", "TABLEAU", "TABLETTE", "TABLIER", "TABOURET", "TACHE", "TACTIQUE", "TAILLE", "TALENT", "TALON", "TAMBOUR", "TAMIS", "TAMPON", "TANGO", "TANTE", "TAPIS", "TAPISSERIE", "TARD", "TARIF", "TARTE", "TARTINE", "TAS", "TASSE", "TAUREAU", "TAUX", "TAXE", "TAXI", "TECHNIQUE", "TECHNOLOGIE", "TEINT", "TEINTURE", "TELEPHONE", "TELESCOPE", "TELEVISION", "TEMOIN", "TEMPE", "TEMPERATURE", "TEMPETE", "TEMPLE", "TEMPS", "TENDANCE", "TENDRESSE", "TENEBRE", "TENNIS", "TENSION", "TENTATION", "TENTATIVE", "TENTE", "TENUE", "TERME", "TERMINUS", "TERRAIN", "TERRASSE", "TERRE", "TERREUR", "TERRITOIRE", "TEST", "TESTAMENT", "TETE", "TEXTE", "TEXTILE", "THE", "THEATRE", "THEME", "THEORIE", "THERMOMETRE", "THON", "TICKET", "TIGRE", "TIGRE", "TIMBRE", "TIMIDITE", "TIR", "TIRAGE", "TIROIR", "TISSU", "TITRE", "TOAST", "TOILE", "TOILETTE", "TOIT", "TOITURE", "TOLE", "TOLERANCE", "TOMATE", "TOMBE", "TOMBEAU", "TON", "TONNE", "TONNEAU", "TONNERRE", "TOQUE", "TORCHE", "TORCHON", "TORRENT", "TORTUE", "TORTURE", "TOTAL", "TOUCHE", "TOUR", "TOURBE", "TOURISTE", "TOURMENT", "TOURNEE", "TOURNOI", "TOURNEVIS", "TOURTE", "TOUT", "TOUX", "TRACE", "TRACTEUR", "TRADITION", "TRADUCTION", "TRAFIC", "TRAHISON", "TRAIN", "TRAINEAU", "TRAIT", "TRAITE", "TRAJET", "TRAME", "TRAMWAY", "TRANCHE", "TRANQUILLITE", "TRANSACTION", "TRANSFERT", "TRANSIT", "TRANSPORT", "TRAPPE", "TRAVAIL", "TRAVEE", "TRAVERS", "TRAVERSEE", "TREFLE", "TREILLIS", "TREMBLEMENT", "TRENTE", "TRESOR", "TREVE", "TRI", "TRIANGLE", "TRIBUNE", "TRIBUNAL", "TRICOT", "TRIOMPHE", "TRIPES", "TRISTESSE", "TROC", "TROIS", "TROMBONE", "TROMPE", "TROPHEE", "TROTTOIR", "TROU", "TROUBLE", "TROUPE", "TROUPEAU", "TROUSSE", "TRUC", "TRUITE", "TUBE", "TUERIE", "TUILE", "TULIPE", "TUMEUR", "TUNNEL", "TURBINE", "TURBO", "TURBULENCE", "TUTEUR", "TUTELLE", "TUYAU", "TYPE", "TYPHON", "TYRAN"
 ];
 
-/* --- CONFIG & STATE --- */
-const ELEMENTS = {
-    animToggle: document.getElementById('anim-toggle'),
-    themeToggle: document.getElementById('theme-toggle'),
-    settingsModal: document.getElementById('settings-modal'),
-    victoryModal: document.getElementById('victory-modal'),
-    input: document.getElementById('user-input'),
-    form: document.getElementById('guess-form'),
-    historyList: document.getElementById('best-list'),
-    resultCard: document.getElementById('current-guess-card'),
-    currentWord: document.getElementById('current-word'),
-    currentTemp: document.getElementById('current-temp'),
-    currentBar: document.getElementById('current-bar'),
-    tempIndicator: document.getElementById('temp-indicator'),
-    toast: document.getElementById('toast-message'),
-    
-    // Stats Victory
-    statAttempts: document.getElementById('stat-attempts'),
-    statTime: document.getElementById('stat-time'),
-    statScore: document.getElementById('stat-score'),
-    victoryWord: document.getElementById('victory-word-display')
-};
-
-/* --- 1. SYSTEME --- */
-function initSystem() {
-    // Theme
-    const savedTheme = localStorage.getItem('lexicore_theme');
-    if (savedTheme === 'light') {
-        document.body.classList.add('light-mode');
-        ELEMENTS.themeToggle.checked = false;
-    } else {
-        ELEMENTS.themeToggle.checked = true;
-    }
-
-    // Eco Mode (Inversé: checked = Eco off, unchecked = Eco on. Ici on va faire: Checked = Eco ON pour simplifier l'UI)
-    // Dans le HTML, j'ai mis "Mode Éco". Donc si coché => Eco Mode Active.
-    const ecoEnabled = localStorage.getItem('lexicore_eco') === 'true';
-    ELEMENTS.animToggle.checked = ecoEnabled;
-    updateEcoState(ecoEnabled);
-
-    // Events Settings
-    document.getElementById('open-settings').addEventListener('click', () => ELEMENTS.settingsModal.classList.remove('hidden'));
-    document.getElementById('close-settings').addEventListener('click', () => ELEMENTS.settingsModal.classList.add('hidden'));
-    document.getElementById('backdrop-settings').addEventListener('click', () => ELEMENTS.settingsModal.classList.add('hidden'));
-    
-    // Events Victory
-    document.getElementById('close-victory').addEventListener('click', () => ELEMENTS.victoryModal.classList.add('hidden'));
-    document.getElementById('backdrop-victory').addEventListener('click', () => ELEMENTS.victoryModal.classList.add('hidden'));
-    document.getElementById('share-btn').addEventListener('click', shareResult);
-
-    // Toggles
-    ELEMENTS.themeToggle.addEventListener('change', (e) => {
-        if (!e.target.checked) {
-            document.body.classList.add('light-mode');
-            localStorage.setItem('lexicore_theme', 'light');
-        } else {
-            document.body.classList.remove('light-mode');
-            localStorage.setItem('lexicore_theme', 'dark');
-        }
-    });
-
-    ELEMENTS.animToggle.addEventListener('change', (e) => {
-        const isEco = e.target.checked;
-        localStorage.setItem('lexicore_eco', isEco);
-        updateEcoState(isEco);
-    });
-}
-
-function updateEcoState(isEco) {
-    if (isEco) document.body.classList.add('eco-mode');
-    else document.body.classList.remove('eco-mode');
-}
-
-/* --- 2. MOTEUR DU JEU --- */
-function getDaySeed() {
-    const now = new Date();
-    // Reset à minuit locale
-    return Math.floor((now.setHours(0,0,0,0) - new Date('2023-01-01').getTime()) / 86400000);
-}
-
-function getDailyWord() {
-    const seed = getDaySeed();
-    // Simple PRNG basé sur le seed
-    const x = Math.sin(seed * 9999) * 10000;
-    const index = Math.floor((x - Math.floor(x)) * dictionary.length);
-    return dictionary[index];
-}
-
-const currentDayId = getDaySeed();
-document.getElementById('day-number').innerText = currentDayId;
-const targetWord = getDailyWord();
-
-/* --- 3. LOGIQUE JEU & STATS --- */
-const STORAGE_KEY = `lexicore_save_${currentDayId}`;
-const META_KEY = `lexicore_meta_${currentDayId}`; // Pour le timer
-
-let gameState = {
-    history: [],
+/* --- CONFIGURATION GLOBALE --- */
+const SYSTEM = {
+    dictionary: [],
+    targetHash: null, // On stocke le hash, pas le mot
+    targetDateId: null,
+    mode: 'daily', // 'daily', 'training', 'archive'
     startTime: null,
     endTime: null,
-    won: false
+    won: false,
+    history: []
 };
 
-function loadGame() {
-    // Charger Historique
-    try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) gameState.history = JSON.parse(stored);
-        
-        const meta = JSON.parse(localStorage.getItem(META_KEY) || '{}');
-        gameState.startTime = meta.start || null;
-        gameState.endTime = meta.end || null;
-        gameState.won = meta.won || false;
+const SETTINGS = {
+    sound: false,
+    haptic: false,
+    eco: false,
+    theme: 'auto'
+};
 
-    } catch (e) { console.error("Save error", e); }
-
-    if (gameState.history.length > 0) {
-        updateHistoryUI();
-        renderResultCard(gameState.history[gameState.history.length - 1]);
+const DOM = {
+    input: document.getElementById('user-input'),
+    form: document.getElementById('guess-form'),
+    list: document.getElementById('best-list'),
+    autoList: document.getElementById('autocomplete-list'),
+    modals: {
+        settings: document.getElementById('settings-modal'),
+        victory: document.getElementById('victory-modal')
+    },
+    toggles: {
+        anim: document.getElementById('anim-toggle'),
+        theme: document.getElementById('theme-toggle'),
+        sound: document.getElementById('sound-toggle'),
+        haptic: document.getElementById('haptic-toggle')
+    },
+    audio: {
+        click: document.getElementById('sfx-click'),
+        error: document.getElementById('sfx-error'),
+        win: document.getElementById('sfx-win')
     }
+};
+
+/* --- 1. CORE SYSTEM & SECURITY --- */
+
+async function initLexicore() {
+    loadSettings();
+    await loadDictionary();
+    setupEventListeners();
     
-    if (gameState.won) {
-        showVictoryModal(false); // false = pas d'anim confetti au reload
+    // Auto-detect theme si 'auto'
+    if (SETTINGS.theme === 'auto') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        applyTheme(prefersDark);
+        // Switch visuel suit la détection
+        DOM.toggles.theme.checked = prefersDark;
+    } else {
+        applyTheme(SETTINGS.theme === 'dark');
+    }
+
+    // Initialisation du jeu selon le mode
+    startSession(SYSTEM.mode);
+}
+
+async function loadDictionary() {
+    try {
+        const response = await fetch('dictionary.json');
+        if (!response.ok) throw new Error("Erreur chargement dico");
+        SYSTEM.dictionary = await response.json();
+    } catch (e) {
+        console.error("System Failure:", e);
+        showToast("Erreur système: Dictionnaire manquant", true);
+        // Fallback minimal de secours
+        SYSTEM.dictionary = ["LEXICORE", "SYSTEME", "ERREUR"]; 
     }
 }
 
-function saveGame() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState.history));
-    localStorage.setItem(META_KEY, JSON.stringify({
-        start: gameState.startTime,
-        end: gameState.endTime,
-        won: gameState.won
-    }));
+// Sécurité : Hash SHA-256 pour ne pas stocker le mot en clair
+async function hashString(str) {
+    const msgBuffer = new TextEncoder().encode(str);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-/* --- 4. CORE MATHS --- */
+/* --- 2. GAME ENGINE --- */
+
+function getDaySeed(dateObj = new Date()) {
+    // Reset à minuit locale
+    return Math.floor((dateObj.setHours(0,0,0,0) - new Date('2023-01-01').getTime()) / 86400000);
+}
+
+function getWordBySeed(seed) {
+    const x = Math.sin(seed * 9999) * 10000;
+    const index = Math.floor((x - Math.floor(x)) * SYSTEM.dictionary.length);
+    return SYSTEM.dictionary[index];
+}
+
+async function startSession(mode, dateOverride = null) {
+    SYSTEM.mode = mode;
+    SYSTEM.won = false;
+    SYSTEM.history = [];
+    SYSTEM.startTime = null;
+    SYSTEM.endTime = null;
+    
+    let rawTarget = "";
+
+    if (mode === 'daily') {
+        SYSTEM.targetDateId = getDaySeed();
+        document.getElementById('game-mode-badge').innerHTML = `JOUR #${SYSTEM.targetDateId}`;
+        rawTarget = getWordBySeed(SYSTEM.targetDateId);
+        loadSaveState(SYSTEM.targetDateId); // Charger sauvegarde si existe
+    } else if (mode === 'archive' && dateOverride) {
+        SYSTEM.targetDateId = getDaySeed(new Date(dateOverride));
+        document.getElementById('game-mode-badge').innerHTML = `ARCHIVE #${SYSTEM.targetDateId}`;
+        rawTarget = getWordBySeed(SYSTEM.targetDateId);
+    } else {
+        // Training
+        document.getElementById('game-mode-badge').innerText = "ENTRAÎNEMENT";
+        rawTarget = SYSTEM.dictionary[Math.floor(Math.random() * SYSTEM.dictionary.length)];
+    }
+
+    // HASHAGE IMMÉDIAT DU MOT CIBLE
+    SYSTEM.targetHash = await hashString(rawTarget);
+    
+    // IMPORTANT: Pour calculer la distance Levenshtein, on a besoin du mot en clair.
+    // Compromis sécurité/client-side : On garde le mot en clair dans une variable locale 'private'
+    // inaccessible depuis la console globale facilement si on encapsulait tout dans un IIFE.
+    // Ici, on le stocke dans SYSTEM._debugTarget (convention privée) pour le moteur.
+    SYSTEM._targetSecret = rawTarget; 
+
+    updateUI();
+}
+
+/* --- 3. INPUT & AUTOCOMPLETE --- */
+
+DOM.input.addEventListener('input', function(e) {
+    playAudio('click', 0.2); // Son de frappe très léger
+    const val = this.value.toUpperCase();
+    closeAutocomplete();
+    if (!val) return;
+    
+    // Filtrer (max 5 suggestions)
+    const matches = SYSTEM.dictionary.filter(w => w.startsWith(val)).slice(0, 5);
+    
+    if (matches.length > 0) {
+        DOM.autoList.classList.remove('hidden');
+        matches.forEach(word => {
+            const div = document.createElement('div');
+            div.className = 'autocomplete-item';
+            div.innerHTML = `<strong>${word.substr(0, val.length)}</strong>${word.substr(val.length)}`;
+            div.addEventListener('click', () => {
+                DOM.input.value = word;
+                closeAutocomplete();
+                DOM.input.focus();
+            });
+            DOM.autoList.appendChild(div);
+        });
+    }
+});
+
+function closeAutocomplete() {
+    DOM.autoList.innerHTML = '';
+    DOM.autoList.classList.add('hidden');
+}
+
+DOM.form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    closeAutocomplete();
+    
+    if (SYSTEM.won && SYSTEM.mode === 'daily') {
+        showVictoryModal(false);
+        return;
+    }
+
+    let inputVal = DOM.input.value.trim().toUpperCase();
+    inputVal = inputVal.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Normalise accents
+
+    if (!inputVal) return;
+
+    if (!SYSTEM.dictionary.includes(inputVal)) {
+        showToast("Mot inconnu dans le système", true);
+        triggerHaptic([50, 50, 50]); // Erreur vibration
+        playAudio('error');
+        return;
+    }
+
+    if (SYSTEM.history.find(h => h.word === inputVal)) {
+        showToast(`Redondance détectée : ${inputVal}`);
+        playAudio('error');
+        DOM.input.value = '';
+        return;
+    }
+
+    // Start Timer
+    if (!SYSTEM.startTime) SYSTEM.startTime = Date.now();
+
+    // Calcul Score
+    const score = calculateScore(inputVal, SYSTEM._targetSecret);
+    const entry = { word: inputVal, temp: score, time: Date.now() };
+    SYSTEM.history.push(entry);
+
+    // Vérification Victoire par Hash (Double check sécurité)
+    const inputHash = await hashString(inputVal);
+    
+    if (inputHash === SYSTEM.targetHash) {
+        handleWin();
+    } else {
+        triggerHaptic(20); // Petit retour tactile
+        playAudio('click');
+        saveGameState();
+        renderResultCard(entry);
+        updateHistoryUI();
+    }
+    DOM.input.value = '';
+});
+
+/* --- 4. LOGIC & MATHS --- */
+
 function levenshtein(s1, s2) {
     const costs = [];
     for (let i = 0; i <= s1.length; i++) {
@@ -178,121 +259,36 @@ function levenshtein(s1, s2) {
     return costs[s2.length];
 }
 
-function calculateScore(word) {
-    if (word === targetWord) return 100.0;
-    const dist = levenshtein(word, targetWord);
-    const maxLen = Math.max(word.length, targetWord.length);
-    // Formule ajustée pour être plus sévère
+function calculateScore(word, target) {
+    if (word === target) return 100.0;
+    const dist = levenshtein(word, target);
+    const maxLen = Math.max(word.length, target.length);
     let score = (maxLen - dist) / maxLen;
-    // Mise à l'échelle pour avoir des décimales intéressantes
-    return Math.max(0, score * 100).toFixed(2); 
+    return Math.max(0, score * 100).toFixed(2);
 }
 
-/* --- 5. INTERACTIONS --- */
-ELEMENTS.form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (gameState.won) {
-        showVictoryModal(false);
-        return;
-    }
-
-    let inputVal = ELEMENTS.input.value.trim().toUpperCase();
-    if (!inputVal) return;
-    
-    // Normalisation
-    inputVal = inputVal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-    // Vérif Dico (Approximative si mot pas trouvé exact)
-    let bestCandidate = inputVal;
-    if (!dictionary.includes(inputVal)) {
-        // Optionnel : Trouver le plus proche pour corriger ? 
-        // Pour l'instant on rejette si trop loin
-        showToast("Mot inconnu dans la base", true);
-        return;
-    }
-
-    // Start Timer if first guess
-    if (!gameState.startTime) {
-        gameState.startTime = Date.now();
-    }
-
-    // Check Duplicate
-    if (gameState.history.find(h => h.word === bestCandidate)) {
-        showToast(`Déjà joué : ${bestCandidate}`);
-        ELEMENTS.input.value = '';
-        return;
-    }
-
-    const score = parseFloat(calculateScore(bestCandidate));
-    
-    const entry = { word: bestCandidate, temp: score, time: Date.now() };
-    gameState.history.push(entry);
-    
-    // Win Condition
-    if (score >= 100) {
-        gameState.won = true;
-        gameState.endTime = Date.now();
-        saveGame();
-        renderResultCard(entry);
-        updateHistoryUI();
-        ELEMENTS.input.value = '';
-        setTimeout(() => showVictoryModal(true), 800); // Délai pour voir la barre se remplir
-    } else {
-        saveGame();
-        renderResultCard(entry);
-        updateHistoryUI();
-        ELEMENTS.input.value = '';
-    }
-});
-
-/* --- 6. RENDERING --- */
-function getTempColor(t) {
-    if (t < 20) return 'var(--cold-color)';
-    if (t < 40) return 'var(--neutral-color)';
-    if (t < 70) return 'var(--warm-color)';
-    if (t < 99) return 'var(--hot-color)';
-    return 'var(--win-color)';
-}
-
-function getEmoji(t) {
-    if (t < 20) return '❄️';
-    if (t < 40) return '💧';
-    if (t < 70) return '🔥';
-    if (t < 99) return '🌋';
-    return '💎';
-}
-
-function showToast(msg, error = false) {
-    ELEMENTS.toast.innerText = msg;
-    ELEMENTS.toast.style.background = error ? 'var(--burn-color)' : 'var(--text-primary)';
-    ELEMENTS.toast.style.color = error ? 'white' : 'var(--bg-color)';
-    ELEMENTS.toast.classList.remove('hidden');
-    setTimeout(() => ELEMENTS.toast.classList.add('hidden'), 2500);
-}
+/* --- 5. UI RENDERING & FEEDBACK --- */
 
 function renderResultCard(data) {
-    ELEMENTS.resultCard.classList.remove('hidden');
+    const card = document.getElementById('current-guess-card');
+    card.classList.remove('hidden');
     
-    ELEMENTS.currentWord.innerText = data.word;
-    ELEMENTS.currentTemp.innerText = data.temp + "°";
-    ELEMENTS.tempIndicator.innerText = getEmoji(data.temp);
+    document.getElementById('current-word').innerText = data.word;
+    document.getElementById('current-temp').innerText = data.temp + "°";
     
     const color = getTempColor(data.temp);
-    ELEMENTS.currentTemp.style.color = color;
-    ELEMENTS.resultCard.style.borderColor = color;
-    ELEMENTS.currentBar.style.background = color;
-    
-    // Animation barre
-    ELEMENTS.currentBar.style.width = '0%';
-    setTimeout(() => {
-        ELEMENTS.currentBar.style.width = data.temp + '%';
-    }, 50);
+    document.getElementById('current-temp').style.color = color;
+    card.style.borderColor = color;
+    document.getElementById('current-bar').style.background = color;
+    document.getElementById('current-bar').style.width = data.temp + '%';
+    document.getElementById('temp-indicator').innerText = getEmoji(data.temp);
 }
 
 function updateHistoryUI() {
-    ELEMENTS.historyList.innerHTML = '';
-    // Tri : Le plus chaud en haut
-    const sorted = [...gameState.history].sort((a, b) => b.temp - a.temp);
+    DOM.list.innerHTML = '';
+    document.getElementById('history-count').innerText = `${SYSTEM.history.length} essais`;
+
+    const sorted = [...SYSTEM.history].sort((a, b) => b.temp - a.temp);
     
     sorted.forEach((item, idx) => {
         const li = document.createElement('li');
@@ -300,85 +296,262 @@ function updateHistoryUI() {
         const color = getTempColor(item.temp);
         li.style.borderLeftColor = color;
         
-        // Highlight top 1
-        if(idx === 0) li.style.background = `linear-gradient(90deg, ${color}11, transparent)`;
+        // Nouvelle Timeline visuelle
+        const timelineHTML = `
+            <div class="timeline-dot-track">
+                <div class="timeline-dot" style="left: ${item.temp}%; background: ${color}"></div>
+            </div>
+        `;
 
         li.innerHTML = `
-            <span class="guess-word">${item.word}</span>
-            <span class="guess-temp" style="color:${color}">${item.temp}°</span>
+            <div class="guess-left">
+                <span class="guess-word">${item.word}</span>
+            </div>
+            <div class="guess-left">
+                ${timelineHTML}
+                <span class="guess-temp" style="color:${color}">${item.temp}°</span>
+            </div>
         `;
-        ELEMENTS.historyList.appendChild(li);
+        DOM.list.appendChild(li);
     });
 }
 
-/* --- 7. VICTOIRE & STATS --- */
-function formatTime(ms) {
-    const totalSec = Math.floor(ms / 1000);
-    const m = Math.floor(totalSec / 60);
-    const s = totalSec % 60;
-    return `${m}m ${s}s`;
+function getTempColor(t) {
+    if (t < 25) return 'var(--cold-color)';
+    if (t < 50) return 'var(--neutral-color)';
+    if (t < 75) return 'var(--warm-color)';
+    if (t < 99) return 'var(--hot-color)';
+    return 'var(--win-color)';
+}
+
+function getEmoji(t) {
+    if (t < 25) return '❄️';
+    if (t < 50) return '💧';
+    if (t < 75) return '🔥';
+    if (t < 99) return '🌋';
+    return '💎';
+}
+
+/* --- 6. WIN & STATS --- */
+
+function handleWin() {
+    SYSTEM.won = true;
+    SYSTEM.endTime = Date.now();
+    saveGameState();
+    updateStats(true); // Update Stats Globales
+    
+    triggerHaptic([100, 50, 100, 50, 200]); // Vibration victoire
+    playAudio('win');
+    
+    renderResultCard(SYSTEM.history[SYSTEM.history.length - 1]);
+    updateHistoryUI();
+    
+    setTimeout(() => showVictoryModal(true), 1000);
+}
+
+function updateStats(isWin) {
+    if (SYSTEM.mode !== 'daily') return; // Stats seulement pour mode quotidien
+
+    const stats = JSON.parse(localStorage.getItem('lexicore_global_stats') || '{"played":0, "wins":0, "streak":0, "maxStreak":0, "totalAttempts":0}');
+    
+    if (isWin) {
+        stats.played++;
+        stats.wins++;
+        stats.streak++;
+        if (stats.streak > stats.maxStreak) stats.maxStreak = stats.streak;
+        stats.totalAttempts += SYSTEM.history.length;
+    } else {
+        // En cas de défaite (si on implémente un abandon)
+        stats.streak = 0;
+    }
+    localStorage.setItem('lexicore_global_stats', JSON.stringify(stats));
 }
 
 function showVictoryModal(animate) {
-    const duration = gameState.endTime - gameState.startTime;
-    const attempts = gameState.history.length;
+    const duration = SYSTEM.endTime - SYSTEM.startTime;
+    const attempts = SYSTEM.history.length;
     
-    // Calcul score "Skill" (Arbitraire : Moins de temps + Moins d'essais = Plus de points)
-    // Base 10000. -100 par essai. -1 par seconde.
-    let skillScore = 10000 - (attempts * 100) - (Math.floor(duration/1000));
-    if (skillScore < 0) skillScore = 100;
-
-    ELEMENTS.victoryWord.innerText = targetWord;
-    ELEMENTS.statAttempts.innerText = attempts;
-    ELEMENTS.statTime.innerText = formatTime(duration);
-    ELEMENTS.statScore.innerText = skillScore;
-
-    ELEMENTS.victoryModal.classList.remove('hidden');
-
-    if (animate && !document.body.classList.contains('eco-mode')) {
-        confettiEffect();
-    }
-}
-
-function confettiEffect() {
-    const colors = ['#00cec9', '#fdcb6e', '#e17055', '#2ecc71', '#6c5ce7'];
-    for(let i=0; i<60; i++) {
-        const d = document.createElement('div');
-        d.style.cssText = `
-            position: fixed; left: ${50 + (Math.random()*20 - 10)}%; top: 50%;
-            width: 8px; height: 8px; background: ${colors[Math.floor(Math.random()*colors.length)]};
-            border-radius: 50%; pointer-events: none; z-index: 9999;
-            transition: transform 1s ease-out, opacity 1s;
-        `;
-        document.body.appendChild(d);
-        
-        // Explosion
-        setTimeout(() => {
-            const angle = Math.random() * Math.PI * 2;
-            const velocity = 100 + Math.random() * 200;
-            const tx = Math.cos(angle) * velocity;
-            const ty = Math.sin(angle) * velocity;
-            d.style.transform = `translate(${tx}px, ${ty}px) scale(0)`;
-            d.style.opacity = 0;
-        }, 10);
-
-        setTimeout(() => d.remove(), 1100);
-    }
-}
-
-function shareResult() {
-    const attempts = gameState.history.length;
-    const time = ELEMENTS.statTime.innerText;
-    const text = `LEXICORE #${currentDayId}\n🚀 Trouvé en ${attempts} coups !\n⏱️ Chrono : ${time}\n\nToi aussi relève le défi : [TonLienGitHubIci]`;
+    document.getElementById('victory-word-display').innerText = SYSTEM._targetSecret;
+    document.getElementById('stat-attempts').innerText = attempts;
+    document.getElementById('stat-time').innerText = formatTime(duration);
     
-    if (navigator.share) {
-        navigator.share({ title: 'LEXICORE', text: text }).catch(console.error);
+    // Stats globales
+    const stats = JSON.parse(localStorage.getItem('lexicore_global_stats') || '{}');
+    document.getElementById('streak-val').innerText = stats.streak || 0;
+    const avg = stats.played ? (stats.totalAttempts / stats.played).toFixed(1) : 0;
+    document.getElementById('avg-val').innerText = avg;
+
+    DOM.modals.victory.classList.remove('hidden');
+
+    // Afficher bouton Rejouer seulement si entrainement
+    const restartBtn = document.getElementById('restart-btn');
+    if(SYSTEM.mode === 'training') {
+        restartBtn.classList.remove('hidden');
+        restartBtn.onclick = () => {
+            DOM.modals.victory.classList.add('hidden');
+            startSession('training');
+        };
     } else {
-        navigator.clipboard.writeText(text);
-        showToast("Résultat copié !", false);
+        restartBtn.classList.add('hidden');
     }
 }
 
-// Start
-initSystem();
-loadGame();
+/* --- 7. UTILS & SETTINGS --- */
+
+function playAudio(type, volume = 1) {
+    if (!SETTINGS.sound) return;
+    const audio = DOM.audio[type];
+    if (audio) {
+        audio.currentTime = 0;
+        audio.volume = volume;
+        audio.play().catch(e => console.log("Audio prevented"));
+    }
+}
+
+function triggerHaptic(pattern) {
+    if (SETTINGS.haptic && navigator.vibrate) {
+        navigator.vibrate(pattern);
+    }
+}
+
+function showToast(msg, error = false) {
+    const t = document.getElementById('toast-message');
+    t.innerText = msg;
+    t.style.background = error ? 'var(--burn-color)' : 'var(--text-primary)';
+    t.style.color = error ? 'white' : 'var(--bg-color)';
+    t.classList.remove('hidden');
+    setTimeout(() => t.classList.add('hidden'), 2500);
+}
+
+function formatTime(ms) {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    return `${m}m ${s % 60}s`;
+}
+
+// Gestion Sauvegarde (LocalStorage)
+function saveGameState() {
+    if (SYSTEM.mode !== 'daily') return; // On ne sauvegarde que le daily
+    localStorage.setItem(`lexicore_save_${SYSTEM.targetDateId}`, JSON.stringify(SYSTEM.history));
+    localStorage.setItem(`lexicore_meta_${SYSTEM.targetDateId}`, JSON.stringify({
+        start: SYSTEM.startTime,
+        end: SYSTEM.endTime,
+        won: SYSTEM.won
+    }));
+}
+
+function loadSaveState(id) {
+    try {
+        const hist = localStorage.getItem(`lexicore_save_${id}`);
+        const meta = JSON.parse(localStorage.getItem(`lexicore_meta_${id}`) || '{}');
+        if (hist) {
+            SYSTEM.history = JSON.parse(hist);
+            SYSTEM.startTime = meta.start;
+            SYSTEM.endTime = meta.end;
+            SYSTEM.won = meta.won;
+            
+            if (SYSTEM.history.length > 0) {
+                updateHistoryUI();
+                renderResultCard(SYSTEM.history[SYSTEM.history.length - 1]);
+            }
+            if (SYSTEM.won) showVictoryModal(false);
+        }
+    } catch(e) { console.error("Save load error", e); }
+}
+
+// Gestion Paramètres UI
+function loadSettings() {
+    SETTINGS.sound = localStorage.getItem('cfg_sound') === 'true';
+    SETTINGS.haptic = localStorage.getItem('cfg_haptic') === 'true';
+    SETTINGS.eco = localStorage.getItem('lexicore_eco') === 'true';
+    SETTINGS.theme = localStorage.getItem('lexicore_theme') || 'auto';
+
+    DOM.toggles.sound.checked = SETTINGS.sound;
+    DOM.toggles.haptic.checked = SETTINGS.haptic;
+    DOM.toggles.anim.checked = SETTINGS.eco;
+    
+    if (SETTINGS.eco) document.body.classList.add('eco-mode');
+}
+
+function setupEventListeners() {
+    // Paramètres Toggles
+    DOM.toggles.sound.addEventListener('change', e => {
+        SETTINGS.sound = e.target.checked;
+        localStorage.setItem('cfg_sound', SETTINGS.sound);
+        if(SETTINGS.sound) playAudio('click');
+    });
+
+    DOM.toggles.haptic.addEventListener('change', e => {
+        SETTINGS.haptic = e.target.checked;
+        localStorage.setItem('cfg_haptic', SETTINGS.haptic);
+        if(SETTINGS.haptic) triggerHaptic(50);
+    });
+
+    DOM.toggles.anim.addEventListener('change', e => {
+        SETTINGS.eco = e.target.checked;
+        localStorage.setItem('lexicore_eco', SETTINGS.eco);
+        document.body.classList.toggle('eco-mode', SETTINGS.eco);
+    });
+
+    DOM.toggles.theme.addEventListener('change', e => {
+        SETTINGS.theme = e.target.checked ? 'dark' : 'light';
+        localStorage.setItem('lexicore_theme', SETTINGS.theme);
+        applyTheme(e.target.checked);
+    });
+
+    // Modales
+    document.getElementById('open-settings').onclick = () => DOM.modals.settings.classList.remove('hidden');
+    document.getElementById('close-settings').onclick = () => DOM.modals.settings.classList.add('hidden');
+    document.getElementById('close-victory').onclick = () => DOM.modals.victory.classList.add('hidden');
+    
+    // Modes
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const mode = btn.dataset.mode;
+            document.getElementById('archive-zone').classList.add('hidden');
+            
+            if (mode === 'daily' || mode === 'training') {
+                startSession(mode);
+                DOM.modals.settings.classList.add('hidden');
+            }
+        });
+    });
+    
+    // Selecteur Archive (Date) - Simple logique d'activation
+    // Pour simplifier, on n'ajoute pas de bouton dédié Archive, on utilise le date picker pour lancer
+    const archivePicker = document.getElementById('archive-picker');
+    archivePicker.addEventListener('change', (e) => {
+        if(e.target.value) {
+            startSession('archive', e.target.value);
+            DOM.modals.settings.classList.add('hidden');
+        }
+    });
+
+    // Share
+    document.getElementById('share-btn').onclick = () => {
+        const text = `LEXICORE #${SYSTEM.targetDateId} 🔓\n${SYSTEM.history.length} essais | ${document.getElementById('stat-time').innerText}\nTemp. Max: ${SYSTEM.history[SYSTEM.history.length-1].temp}°`;
+        if (navigator.share) navigator.share({ text }).catch(()=>{});
+        else { navigator.clipboard.writeText(text); showToast("Copié !"); }
+    };
+}
+
+function applyTheme(isDark) {
+    if (isDark) {
+        document.body.classList.remove('light-mode');
+    } else {
+        document.body.classList.add('light-mode');
+    }
+}
+
+// Boot
+window.addEventListener('load', initLexicore);
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+        .then(() => console.log('Lexicore System: Secure & Offline Ready'))
+        .catch(console.error);
+}
