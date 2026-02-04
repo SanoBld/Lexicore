@@ -1,42 +1,31 @@
-const CACHE_NAME = 'lexicore-v4-secure';
-const URLS_TO_CACHE = [
+const CACHE_NAME = 'lexicore-v2-final';
+const ASSETS = [
   './',
   './index.html',
   './style.css',
   './script.js',
   './manifest.json',
   './dictionary.json',
-  './assets/sounds/click.mp3',
-  './assets/sounds/error.mp3',
-  './assets/sounds/win.mp3',
-  // Cache Fonts (Google Fonts)
   'https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&display=swap'
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(URLS_TO_CACHE))
-  );
+self.addEventListener('install', (e) => {
+  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
 });
 
-// Stratégie : Cache First, then Network (pour la rapidité)
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Si trouvé dans le cache, on retourne
-      if (response) return response;
-
-      // Sinon on fetch
-      return fetch(event.request).then((response) => {
-        // On ne met pas en cache les requêtes externes dynamiques sauf les fonts
-        if(!response || response.status !== 200 || response.type !== 'basic') {
-            // Check si c'est une font Google pour la mettre en cache dynamiquement
-            if (event.request.url.includes('fonts.gstatic.com')) {
-                const responseToCache = response.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, responseToCache);
-                });
+self.addEventListener('fetch', (e) => {
+  e.respondWith(
+    caches.match(e.request).then((res) => {
+      // Stratégie : Cache First
+      if (res) return res;
+      
+      // Network Fallback + Cache des polices Google
+      return fetch(e.request).then(response => {
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+            // Mise en cache spécifique des Fonts si besoin
+            if (e.request.url.includes('fonts.gstatic.com')) {
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
             }
             return response;
         }
@@ -46,15 +35,12 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Clean up old caches
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
+        keys.map((key) => {
+          if (key !== CACHE_NAME) return caches.delete(key);
         })
       );
     })

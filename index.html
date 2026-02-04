@@ -3,190 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>LEXICORE | Système Sémantique</title>
-    <meta name="theme-color" content="#0a0a0f">
-    <meta name="description" content="Jeu de déduction sémantique quotidien et entraînement cérébral.">
+    <title>LEXICORE V2 | Terminal Sémantique</title>
+    <meta name="theme-color" content="#050508">
+    <meta name="description" content="Système de déduction sémantique. Version 2.0.">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <audio id="sfx-click" src="assets/sounds/click.mp3" preload="auto"></audio>
-    <audio id="sfx-error" src="assets/sounds/error.mp3" preload="auto"></audio>
-    <audio id="sfx-win" src="assets/sounds/win.mp3" preload="auto"></audio>
+    <div id="noise-layer" class="noise-overlay"></div>
+    <div id="glow-layer" class="glow-spot"></div>
 
-    <div class="noise-overlay"></div>
-    <div class="glow-spot"></div>
+    <main class="app-container">
+        
+        <section id="view-terminal" class="view active">
+            <header class="view-header">
+                <div class="brand">LEXI<span class="brand-accent">CORE</span> <span class="version-tag">V2.0</span></div>
+                <div class="status-badge" id="day-badge">SYSTEM READY</div>
+            </header>
 
-    <div id="settings-modal" class="modal hidden">
-        <div class="modal-content glass-panel">
-            <div class="modal-header">
-                <h3>CONFIG. SYSTÈME</h3>
-                <button id="close-settings" class="icon-btn">✕</button>
+            <div class="game-interface">
+                <div id="feedback-card" class="glass-panel hidden">
+                    <div class="card-top">
+                        <span class="label">ANALYSE SÉQUENCE</span>
+                        <span class="temp-icon" id="temp-icon">❄️</span>
+                    </div>
+                    <div class="word-feedback" id="feedback-word">---</div>
+                    <div class="temp-bar-track">
+                        <div class="temp-bar-fill" id="temp-bar"></div>
+                    </div>
+                    <div class="temp-value" id="feedback-temp">0.00%</div>
+                </div>
+
+                <form id="guess-form" class="input-group glass-panel">
+                    <input type="text" id="guess-input" placeholder="ENTRER MOT..." autocomplete="off" spellcheck="false" enterkeyhint="go">
+                    <button type="submit" id="submit-btn" aria-label="Valider">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                    <div id="autocomplete-list" class="autocomplete-items hidden"></div>
+                </form>
+
+                <div id="mini-logs" class="mini-logs-list"></div>
             </div>
+        </section>
+
+        <section id="view-logs" class="view">
+            <header class="view-header">
+                <h2>DONNÉES SYSTÈME</h2>
+            </header>
             
-            <div class="setting-group">
-                <h4>INTERFACE</h4>
-                <div class="setting-row">
-                    <div class="setting-label">
-                        <span>Mode Éco</span>
-                        <small>Désactive flous & particules</small>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="anim-toggle">
-                        <span class="slider round"></span>
-                    </label>
-                </div>
-                <div class="setting-row">
-                    <div class="setting-label">
-                        <span>Thème Sombre</span>
-                        <small>Auto par défaut</small>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="theme-toggle" checked>
-                        <span class="slider round"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="setting-group">
-                <h4>IMMERSION</h4>
-                <div class="setting-row">
-                    <div class="setting-label">
-                        <span>Audio FX</span>
-                        <small>Sons d'interface</small>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="sound-toggle">
-                        <span class="slider round"></span>
-                    </label>
-                </div>
-                <div class="setting-row">
-                    <div class="setting-label">
-                        <span>Haptique</span>
-                        <small>Vibrations tactiles</small>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="haptic-toggle">
-                        <span class="slider round"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="setting-group">
-                <h4>MODE DE JEU</h4>
-                <div class="mode-selector">
-                    <button class="mode-btn active" data-mode="daily">QUOTIDIEN</button>
-                    <button class="mode-btn" data-mode="training">ENTRAÎNEMENT</button>
-                </div>
-                <div class="archive-selector hidden" id="archive-zone">
-                    <label>ARCHIVES :</label>
-                    <input type="date" id="archive-picker">
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <small>Lexicore v4.0 • Secure Build</small>
-            </div>
-        </div>
-        <div class="modal-backdrop" id="backdrop-settings"></div>
-    </div>
-
-    <div id="victory-modal" class="modal hidden">
-        <div class="modal-content glass-panel victory-content">
-            <div class="victory-header">
-                <h2>SÉQUENCE DÉCRYPTÉE</h2>
-                <div class="victory-badge">SUCCÈS</div>
-            </div>
-            
-            <div class="victory-word" id="victory-word-display">---</div>
-
             <div class="stats-grid">
-                <div class="stat-box">
+                <div class="stat-box glass-panel">
                     <span class="stat-label">ESSAIS</span>
                     <span class="stat-value" id="stat-attempts">0</span>
                 </div>
-                <div class="stat-box">
-                    <span class="stat-label">TEMPS</span>
-                    <span class="stat-value" id="stat-time">00:00</span>
+                <div class="stat-box glass-panel">
+                    <span class="stat-label">VICTOIRES</span>
+                    <span class="stat-value" id="stat-wins">0</span>
                 </div>
-                <div class="stat-box">
-                    <span class="stat-label">SCORE</span>
-                    <span class="stat-value highlight" id="stat-score">0</span>
+                <div class="stat-box glass-panel">
+                    <span class="stat-label">STREAK</span>
+                    <span class="stat-value" id="stat-streak">0</span>
+                </div>
+            </div>
+
+            <div class="history-container">
+                <h3 class="section-subtitle">JOURNAL D'ACTIVITÉ</h3>
+                <ul id="full-history-list" class="log-list"></ul>
+            </div>
+        </section>
+
+        <section id="view-system" class="view">
+            <header class="view-header">
+                <h2>CONFIG. SYSTÈME</h2>
+            </header>
+            
+            <div class="settings-list glass-panel">
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">Synthèse Audio</span>
+                        <small>Génération procédurale (WebAudio)</small>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-audio">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">Mode Performance</span>
+                        <small>Réduire les effets visuels (Éco)</small>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-perf">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-group-vertical">
+                    <span class="setting-name">Thème Interface</span>
+                    <div class="theme-selector">
+                        <button class="theme-btn active" data-theme="auto">AUTO</button>
+                        <button class="theme-btn" data-theme="dark">SOMBRE</button>
+                        <button class="theme-btn" data-theme="light">CLAIR</button>
+                    </div>
+                </div>
+
+                <div class="setting-actions">
+                    <button id="btn-reset" class="danger-btn">⚠️ FORMATAGE SYSTÈME</button>
                 </div>
             </div>
             
-            <div class="global-stats-row">
-                <div class="mini-stat">🔥 Série: <span id="streak-val">0</span></div>
-                <div class="mini-stat">📊 Moy: <span id="avg-val">0</span></div>
-            </div>
-
-            <div class="victory-actions">
-                <button id="share-btn" class="action-btn">PARTAGER</button>
-                <button id="restart-btn" class="subtle-btn hidden">Nouvelle Partie (Entraînement)</button>
-                <button id="close-victory" class="subtle-btn">Fermer</button>
-            </div>
-        </div>
-        <div class="modal-backdrop" id="backdrop-victory"></div>
-    </div>
-
-    <main class="app-container">
-        <header>
-            <div class="header-top">
-                <span class="brand">LEXI<span class="brand-accent">CORE</span></span>
-                <div class="header-right">
-                    <span class="day-badge" id="game-mode-badge">JOUR #<span id="day-number"></span></span>
-                    <button id="open-settings" class="icon-btn settings-trigger" aria-label="Paramètres">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <section class="game-interface">
-            <form id="guess-form" class="input-zone glass-panel" onsubmit="event.preventDefault();">
-                <div class="input-wrapper">
-                    <input type="text" id="user-input" placeholder="Initialiser séquence..." autocomplete="off" spellcheck="false" enterkeyhint="go">
-                    <div id="autocomplete-list" class="autocomplete-items hidden"></div>
-                </div>
-                <button type="submit" id="submit-btn" aria-label="Valider">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                </button>
-            </form>
-
-            <div id="toast-message" class="toast hidden"></div>
-
-            <div id="current-guess-card" class="card result-card glass-panel hidden">
-                <div class="card-header-row">
-                    <span class="card-label">ANALYSE</span>
-                    <span id="temp-indicator" class="temp-indicator">❄️</span>
-                </div>
-                <div class="result-row">
-                    <span id="current-word" class="word-display">---</span>
-                    <span id="current-temp" class="temp-display">0°C</span>
-                </div>
-                <div class="progress-track">
-                    <div id="current-bar" class="progress-fill"></div>
-                </div>
+            <div class="credits">
+                <p>LEXICORE OS • V2.1.0</p>
+                <p class="blink">STATUS: ONLINE</p>
             </div>
         </section>
-
-        <section class="history-section">
-            <div class="section-title">
-                <span>LOGS PERTINENCE</span>
-                <span id="history-count" style="opacity: 0.5; font-size: 0.8em">0 essais</span>
-            </div>
-            <div class="history-list-wrapper">
-                <ul id="best-list" class="guess-list"></ul>
-            </div>
-        </section>
-
-        <footer class="app-footer">
-            <p>LEXICORE SYSTEM • <span id="version-display">v4.0</span></p>
-        </footer>
     </main>
 
+    <nav class="system-nav glass-panel">
+        <button class="nav-btn active" data-target="view-terminal">
+            <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            <span class="nav-label">TERMINAL</span>
+        </button>
+        <button class="nav-btn" data-target="view-logs">
+            <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            <span class="nav-label">LOGS</span>
+        </button>
+        <button class="nav-btn" data-target="view-system">
+            <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span class="nav-label">SYSTEM</span>
+        </button>
+    </nav>
+
+    <div id="victory-modal" class="modal hidden">
+        <div class="modal-content glass-panel victory-style">
+            <h2 class="glitch-text">SÉQUENCE VALIDÉE</h2>
+            <div class="victory-word" id="victory-word">MOT</div>
+            <button id="close-victory" class="action-btn">FERMER SESSION</button>
+        </div>
+        <div class="modal-backdrop"></div>
+    </div>
+
     <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+    </script>
 </body>
 </html>
