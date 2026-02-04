@@ -1,22 +1,23 @@
 /* =================================================================
-   LEXICORE V2.1 - CORE ENGINE
-   Optimized: Audio Unlock | Dynamic Theme | Robust Normalization
+   LEXICORE V2.2 - CORE ENGINE
+   Persistence Totale | Feedback Dynamique | Badges
    ================================================================= */
 
 const SYSTEM = {
-    version: '2.1',
+    version: '2.2',
     startDate: new Date('2026-02-02T00:00:00'),
     dictionary: [],
     
-    // État du Jeu
+    // État du Jeu (Sauvegardé)
     todayId: 0,
     targetWord: '', 
     guesses: [],
-    gameState: 'PLAYING',
+    gameState: 'PLAYING', // PLAYING, WON
 
     // Paramètres
     settings: {
         audio: true,
+        haptic: true,
         perfMode: false,
         theme: 'auto'
     },
@@ -29,35 +30,29 @@ const SYSTEM = {
     }
 };
 
-/* --- 1. AUDIO ENGINE (UNLOCKED) --- */
+/* --- 1. AUDIO ENGINE --- */
 class AudioSynth {
     constructor() {
         this.ctx = null;
         this.unlocked = false;
     }
 
-    // Déverrouillage AudioContext au premier clic (Important pour Mobile)
     unlock() {
         if (!this.ctx) {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         }
         if (this.ctx.state === 'suspended') {
-            this.ctx.resume().then(() => {
-                this.unlocked = true;
-            });
+            this.ctx.resume().then(() => { this.unlocked = true; });
         }
     }
 
     play(type) {
         if (!SYSTEM.settings.audio) return;
-        
-        // Init si pas fait
         if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
 
         const t = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
@@ -71,17 +66,15 @@ class AudioSynth {
                 osc.start(t);
                 osc.stop(t + 0.05);
                 break;
-
             case 'error':
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, t);
-                osc.frequency.linearRampToValueAtTime(100, t + 0.2);
+                osc.frequency.setValueAtTime(120, t);
+                osc.frequency.linearRampToValueAtTime(80, t + 0.2);
                 gain.gain.setValueAtTime(0.1, t);
                 gain.gain.linearRampToValueAtTime(0.001, t + 0.2);
                 osc.start(t);
                 osc.stop(t + 0.2);
                 break;
-
             case 'win':
                 osc.type = 'square';
                 gain.gain.value = 0.05;
@@ -98,20 +91,27 @@ class AudioSynth {
 }
 const AUDIO = new AudioSynth();
 
-/* --- 2. DOM & NAV --- */
+/* --- 2. DOM ELEMENTS --- */
 const DOM = {
     views: document.querySelectorAll('.view'),
     navBtns: document.querySelectorAll('.nav-btn'),
     form: document.getElementById('guess-form'),
     input: document.getElementById('guess-input'),
     autoList: document.getElementById('autocomplete-list'),
+    
+    // Feedback
     card: document.getElementById('feedback-card'),
     fWord: document.getElementById('feedback-word'),
     fTemp: document.getElementById('feedback-temp'),
     fBar: document.getElementById('temp-bar'),
     fIcon: document.getElementById('temp-icon'),
+    ambience: document.getElementById('ambience-display'),
+    
+    // Logs
     miniLogs: document.getElementById('mini-logs'),
     fullLogs: document.getElementById('full-history-list'),
+    
+    // System
     winModal: document.getElementById('victory-modal'),
     closeWin: document.getElementById('close-victory'),
     toggles: {
@@ -120,27 +120,31 @@ const DOM = {
     },
     themeBtns: document.querySelectorAll('.theme-btn'),
     resetBtn: document.getElementById('btn-reset'),
+    
+    // Stats
     sAttempts: document.getElementById('stat-attempts'),
     sWins: document.getElementById('stat-wins'),
-    sStreak: document.getElementById('stat-streak')
+    sStreak: document.getElementById('stat-streak'),
+    dayBadge: document.getElementById('day-badge')
 };
 
-/* --- 3. INIT & THEME LOGIC --- */
+/* --- 3. INIT & PERSISTENCE --- */
 async function initSystem() {
-    loadLocalStorage();
-    setupThemeListener(); // Écoute temps réel
+    loadGlobalSettings();
+    setupThemeListener();
     applySettings();
     setupNavigation();
     
-    // Audio Unlocker Global
-    window.addEventListener('click', () => AUDIO.unlock(), { once: true });
-    window.addEventListener('touchstart', () => AUDIO.unlock(), { once: true });
+    // Audio Unlock Logic
+    const unlockFn = () => { AUDIO.unlock(); };
+    window.addEventListener('click', unlockFn, { once: true });
+    window.addEventListener('touchstart', unlockFn, { once: true });
 
-    // Date & Day ID
+    // Calcul ID du jour
     const now = new Date();
     const diffTime = now.getTime() - SYSTEM.startDate.getTime();
     SYSTEM.todayId = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    document.getElementById('day-badge').textContent = `JOUR #${SYSTEM.todayId}`;
+    DOM.dayBadge.textContent = `JOUR #${SYSTEM.todayId}`;
     
     try {
         const res = await fetch('dictionary.json');
@@ -148,88 +152,66 @@ async function initSystem() {
         startDailyGame();
     } catch (e) {
         console.error("Dict Error", e);
-        alert("Erreur: Dictionnaire introuvable.");
+        DOM.ambience.textContent = "ERREUR SYSTÈME";
     }
 }
 
-function loadLocalStorage() {
+function startDailyGame() {
+    // Mot cible déterminé par seed
+    const index = (SYSTEM.todayId * 1337) % SYSTEM.dictionary.length;
+    SYSTEM.targetWord = SYSTEM.dictionary[index];
+    
+    // Restauration de l'état
+    const saveKey = `lexicore_state_v2_${SYSTEM.todayId}`;
+    const savedState = localStorage.getItem(saveKey);
+    
+    if (savedState) {
+        const data = JSON.parse(savedState);
+        SYSTEM.guesses = data.guesses || [];
+        SYSTEM.gameState = data.state || 'PLAYING';
+        
+        // Reconstruire l'interface
+        SYSTEM.guesses.forEach(g => addLogUI(g));
+        updateStatsUI();
+        
+        // Si des coups existent, afficher le dernier feedback
+        if (SYSTEM.guesses.length > 0) {
+            renderFeedback(SYSTEM.guesses[SYSTEM.guesses.length - 1]);
+        }
+        
+        if (SYSTEM.gameState === 'WON') {
+            triggerVictory(false);
+        }
+    }
+}
+
+function saveGameState() {
+    const saveKey = `lexicore_state_v2_${SYSTEM.todayId}`;
+    const data = {
+        guesses: SYSTEM.guesses,
+        state: SYSTEM.gameState
+    };
+    localStorage.setItem(saveKey, JSON.stringify(data));
+}
+
+function loadGlobalSettings() {
     const sSettings = localStorage.getItem('lexicore_settings_v2');
     if (sSettings) SYSTEM.settings = JSON.parse(sSettings);
     
     const sStats = localStorage.getItem('lexicore_stats_v2');
     if (sStats) SYSTEM.stats = JSON.parse(sStats);
-    
-    updateStatsUI();
 }
 
-function setupThemeListener() {
-    // Écoute les changements système (Light/Dark) en temps réel
-    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
-        if (SYSTEM.settings.theme === 'auto') {
-            applyTheme('auto');
-        }
-    });
-}
-
-function applySettings() {
-    DOM.toggles.audio.checked = SYSTEM.settings.audio;
-    DOM.toggles.perf.checked = SYSTEM.settings.perfMode;
-    
-    DOM.themeBtns.forEach(b => {
-        b.classList.toggle('active', b.dataset.theme === SYSTEM.settings.theme);
-    });
-
-    document.body.classList.toggle('perf-mode', SYSTEM.settings.perfMode);
-    applyTheme(SYSTEM.settings.theme);
-}
-
-function applyTheme(mode) {
-    document.body.classList.remove('light-theme');
-    
-    if (mode === 'light') {
-        document.body.classList.add('light-theme');
-    } else if (mode === 'auto') {
-        const isSystemLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-        if (isSystemLight) document.body.classList.add('light-theme');
-    }
-}
-
-function saveSettings() {
-    localStorage.setItem('lexicore_settings_v2', JSON.stringify(SYSTEM.settings));
-}
-
-/* --- 4. GAME & NORMALIZATION --- */
-
-// Normalisation Avancée (Accents, minuscules, espaces)
+/* --- 4. GAME LOGIC --- */
 function normalize(str) {
     if (!str) return "";
     let clean = str.toLowerCase().trim();
-    // Enlève accents
     clean = clean.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    // Garde lettres
     clean = clean.replace(/[^a-z]/g, "");
-    // Retourne en majuscule pour matching dictionnaire
     return clean.toUpperCase();
 }
 
-function startDailyGame() {
-    const index = (SYSTEM.todayId * 1337) % SYSTEM.dictionary.length;
-    SYSTEM.targetWord = SYSTEM.dictionary[index];
-    
-    const todaySave = localStorage.getItem(`lexicore_day_${SYSTEM.todayId}`);
-    if (todaySave) {
-        const data = JSON.parse(todaySave);
-        SYSTEM.guesses = data.guesses;
-        SYSTEM.gameState = data.state;
-        
-        SYSTEM.guesses.forEach(g => addLogUI(g));
-        if (SYSTEM.guesses.length > 0) {
-            renderFeedback(SYSTEM.guesses[SYSTEM.guesses.length - 1]);
-        }
-        if (SYSTEM.gameState === 'WON') triggerVictory(false);
-    }
-}
-
+// Algorithme Levenshtein -> Température
 function getTemperature(guess, target) {
     if (guess === target) return 100;
     const m = guess.length, n = target.length;
@@ -254,120 +236,158 @@ function handleGuess(e) {
 
     let word = normalize(DOM.input.value);
 
-    // Gestion Pluriel Simple 'S' si mot non trouvé
-    if (word.length > 2 && !SYSTEM.dictionary.includes(word)) {
-        if (word.endsWith('S')) {
-            let singular = word.slice(0, -1);
-            if (SYSTEM.dictionary.includes(singular)) {
-                word = singular;
-            }
-        }
+    // Gestion Pluriel simple
+    if (word.length > 2 && !SYSTEM.dictionary.includes(word) && word.endsWith('S')) {
+        let singular = word.slice(0, -1);
+        if (SYSTEM.dictionary.includes(singular)) word = singular;
     }
 
     // Validation
     if (word.length < 2 || !SYSTEM.dictionary.includes(word)) {
-        shakeInput();
+        triggerShake();
         AUDIO.play('error');
+        triggerHaptic('error');
+        DOM.ambience.textContent = "MOT INCONNU";
+        DOM.ambience.style.color = "var(--danger)";
+        setTimeout(() => DOM.ambience.style.color = "var(--text-secondary)", 1000);
         return;
     }
 
     if (SYSTEM.guesses.some(g => g.word === word)) {
-        shakeInput();
+        triggerShake();
+        DOM.input.value = '';
+        DOM.ambience.textContent = "DÉJÀ ANALYSÉ";
         return;
     }
 
+    // Calcul
     const temp = getTemperature(word, SYSTEM.targetWord);
     const guessData = { word, temp, time: Date.now() };
 
     SYSTEM.guesses.push(guessData);
-    localStorage.setItem(`lexicore_day_${SYSTEM.todayId}`, JSON.stringify({
-        guesses: SYSTEM.guesses,
-        state: SYSTEM.gameState
-    }));
     
+    // UI Updates
     addLogUI(guessData);
     renderFeedback(guessData);
     DOM.input.value = '';
     closeAutocomplete();
-
+    
+    // Win Condition
     if (temp === 100) {
         SYSTEM.gameState = 'WON';
-        localStorage.setItem(`lexicore_day_${SYSTEM.todayId}`, JSON.stringify({
-            guesses: SYSTEM.guesses,
-            state: 'WON'
-        }));
         updateGlobalStats(true);
         triggerVictory(true);
     } else {
         AUDIO.play('click');
+        triggerHaptic('success');
     }
+    
+    saveGameState();
+    updateStatsUI();
 }
 
-/* --- 5. UI UTILS --- */
+/* --- 5. VISUAL FEEDBACK & BADGES --- */
+
+function getFeedbackStyle(temp) {
+    if (temp === 100) return { color: 'var(--temp-win)', icon: '💎', label: 'CRITIQUE' };
+    if (temp >= 80) return { color: 'var(--temp-hot)', icon: '🌋', label: 'BRÛLANT' };
+    if (temp >= 60) return { color: 'var(--temp-warm)', icon: '🔥', label: 'CHAUD' };
+    if (temp >= 40) return { color: 'var(--temp-neutral)', icon: '☁️', label: 'NEUTRE' };
+    if (temp >= 20) return { color: 'var(--temp-cold)', icon: '❄️', label: 'FROID' };
+    return { color: 'var(--temp-glacial)', icon: '🧊', label: 'GLACIAL' };
+}
+
+function getAmbienceText(temp) {
+    if (temp === 100) return "SÉQUENCE VALIDÉE";
+    if (temp >= 90) return "IMPACT IMMINENT !";
+    if (temp >= 75) return "CONVERGENCE HAUTE";
+    if (temp >= 50) return "ANALYSE EN COURS...";
+    if (temp >= 25) return "SIGNAL FAIBLE";
+    return "AUCUNE CORRÉLATION";
+}
+
 function renderFeedback(data) {
     DOM.card.classList.remove('hidden');
+    
+    const style = getFeedbackStyle(data.temp);
+    
     DOM.fWord.textContent = data.word;
-    DOM.fTemp.textContent = data.temp + "°C";
+    DOM.fTemp.textContent = data.temp + "%";
     DOM.fBar.style.width = data.temp + "%";
+    DOM.fBar.style.backgroundColor = style.color;
     
-    let color = 'var(--temp-cold)';
-    let icon = '❄️';
-    if (data.temp > 25) { color = 'var(--temp-warm)'; icon = '🔥'; }
-    if (data.temp > 75) { color = 'var(--temp-hot)'; icon = '🌋'; }
-    if (data.temp === 100) { color = 'var(--temp-win)'; icon = '💎'; }
-    
-    DOM.fBar.style.backgroundColor = color;
-    DOM.fTemp.style.color = color;
-    DOM.fIcon.textContent = icon;
-    DOM.card.style.borderColor = color;
+    DOM.fIcon.textContent = style.icon;
+    DOM.card.style.borderColor = style.color;
+    DOM.fTemp.style.color = style.color;
+
+    // Pulsation si très chaud
+    if (data.temp >= 85) DOM.fBar.classList.add('pulse-glow');
+    else DOM.fBar.classList.remove('pulse-glow');
+
+    // Message d'ambiance
+    DOM.ambience.textContent = getAmbienceText(data.temp);
+    DOM.ambience.style.color = (data.temp >= 80) ? style.color : 'var(--text-secondary)';
 }
 
 function addLogUI(data) {
+    const style = getFeedbackStyle(data.temp);
+    
     const li = document.createElement('li');
     li.className = 'log-item';
-    let color = 'var(--text-secondary)';
-    if (data.temp > 50) color = 'var(--temp-warm)';
-    if (data.temp > 80) color = 'var(--temp-hot)';
-    if (data.temp === 100) color = 'var(--temp-win)';
+    li.style.borderLeftColor = style.color;
     
-    li.style.borderLeftColor = color;
-    li.innerHTML = `<span>${data.word}</span> <span style="font-weight:bold; color:${color}">${data.temp}°</span>`;
+    const html = `
+        <div class="log-left">
+            <span class="log-word">${data.word}</span>
+            <span class="log-badge" style="color:${style.color}; border:1px solid ${style.color}">${style.label}</span>
+        </div>
+        <span style="font-weight:bold; color:${style.color}">${data.temp}°</span>
+    `;
+    li.innerHTML = html;
     
     DOM.fullLogs.prepend(li.cloneNode(true));
-    const miniLi = li.cloneNode(true);
+    
+    // Mini logs (sans badge)
+    const miniLi = document.createElement('li');
+    miniLi.className = 'log-item';
+    miniLi.style.borderLeftColor = style.color;
+    miniLi.innerHTML = `<span>${data.word}</span> <span style="font-weight:bold; color:${style.color}">${data.temp}°</span>`;
+    
     DOM.miniLogs.prepend(miniLi);
     if (DOM.miniLogs.children.length > 3) DOM.miniLogs.lastChild.remove();
 }
 
-function shakeInput() {
+function triggerShake() {
+    DOM.form.classList.remove('shake');
+    void DOM.form.offsetWidth; // Force reflow
     DOM.form.classList.add('shake');
-    // Petit hack JS pour reset l'anim si besoin
-    DOM.form.style.transform = "translateX(5px)";
-    setTimeout(() => DOM.form.style.transform = "translateX(0)", 150);
 }
 
 function triggerVictory(playSound) {
     if (playSound) AUDIO.play('win');
+    triggerHaptic('victory');
     document.getElementById('victory-word').textContent = SYSTEM.targetWord;
     DOM.input.disabled = true;
     DOM.input.placeholder = "TERMINÉ";
+    
+    DOM.ambience.textContent = "SESSION TERMINÉE";
+    DOM.ambience.style.color = "var(--temp-win)";
+    
     setTimeout(() => {
         DOM.winModal.classList.remove('hidden');
     }, 800);
 }
 
-/* --- 6. NAVIGATION & EVENTS --- */
+/* --- 6. UTILS & NAVIGATION --- */
 function setupNavigation() {
     DOM.navBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             AUDIO.play('click');
             const targetId = btn.dataset.target;
             
-            // Active Class
             DOM.navBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
-            // Switch View
             DOM.views.forEach(v => v.classList.remove('active'));
             document.getElementById(targetId).classList.add('active');
         });
@@ -385,7 +405,6 @@ function setupNavigation() {
         applySettings();
         saveSettings();
     });
-
     DOM.themeBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             SYSTEM.settings.theme = btn.dataset.theme;
@@ -395,12 +414,38 @@ function setupNavigation() {
     });
 
     DOM.resetBtn.addEventListener('click', () => {
-        if(confirm("Effacer tout ?")) {
+        if(confirm("Réinitialisation complète ?")) {
             localStorage.clear();
             location.reload();
         }
     });
     DOM.closeWin.addEventListener('click', () => DOM.winModal.classList.add('hidden'));
+}
+
+function setupThemeListener() {
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+        if (SYSTEM.settings.theme === 'auto') applyTheme('auto');
+    });
+}
+
+function applySettings() {
+    DOM.toggles.audio.checked = SYSTEM.settings.audio;
+    DOM.toggles.perf.checked = SYSTEM.settings.perfMode;
+    DOM.themeBtns.forEach(b => b.classList.toggle('active', b.dataset.theme === SYSTEM.settings.theme));
+    document.body.classList.toggle('perf-mode', SYSTEM.settings.perfMode);
+    applyTheme(SYSTEM.settings.theme);
+}
+
+function applyTheme(mode) {
+    document.body.classList.remove('light-theme');
+    if (mode === 'light') document.body.classList.add('light-theme');
+    else if (mode === 'auto' && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        document.body.classList.add('light-theme');
+    }
+}
+
+function saveSettings() {
+    localStorage.setItem('lexicore_settings_v2', JSON.stringify(SYSTEM.settings));
 }
 
 function updateGlobalStats(win) {
@@ -417,6 +462,7 @@ function updateStatsUI() {
     DOM.sStreak.textContent = SYSTEM.stats.streak;
 }
 
+// Autocomplete Logic
 function handleAutocomplete(e) {
     const val = normalize(e.target.value);
     DOM.autoList.innerHTML = '';
@@ -441,3 +487,27 @@ function handleAutocomplete(e) {
 function closeAutocomplete() { DOM.autoList.classList.add('hidden'); }
 
 window.addEventListener('load', initSystem);
+
+/* --- FEEDBACK HAPTIQUE --- */
+function triggerHaptic(type) {
+    if (!("vibrate" in navigator)) return; // Vérifie si l'appareil supporte les vibrations
+
+    switch (type) {
+        case 'success':
+            // Une petite vibration sèche
+            navigator.vibrate(10);
+            break;
+        case 'warning':
+            // Deux vibrations courtes
+            navigator.vibrate([40, 30, 40]);
+            break;
+        case 'error':
+            // Une vibration longue et lourde pour l'erreur
+            navigator.vibrate(200);
+            break;
+        case 'victory':
+            // Rythme de célébration (SOS ou pulse)
+            navigator.vibrate([100, 50, 100, 50, 300]);
+            break;
+    }
+}

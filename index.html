@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>LEXICORE V2 | Terminal Sémantique</title>
     <meta name="theme-color" content="#050508">
-    <meta name="description" content="Système de déduction sémantique. Version 2.0.">
+    <meta name="description" content="Système de déduction sémantique. Version 2.2.">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
@@ -19,8 +19,8 @@
         
         <section id="view-terminal" class="view active">
             <header class="view-header">
-                <div class="brand">LEXI<span class="brand-accent">CORE</span> <span class="version-tag">V2.0</span></div>
-                <div class="status-badge" id="day-badge">SYSTEM READY</div>
+                <div class="brand">LEXI<span class="brand-accent">CORE</span> <span class="version-tag">V2.2</span></div>
+                <div class="status-badge" id="day-badge">INIT...</div>
             </header>
 
             <div class="game-interface">
@@ -30,10 +30,17 @@
                         <span class="temp-icon" id="temp-icon">❄️</span>
                     </div>
                     <div class="word-feedback" id="feedback-word">---</div>
-                    <div class="temp-bar-track">
-                        <div class="temp-bar-fill" id="temp-bar"></div>
+                    
+                    <div class="temp-wrapper">
+                        <div class="temp-bar-track">
+                            <div class="temp-bar-fill" id="temp-bar"></div>
+                        </div>
                     </div>
-                    <div class="temp-value" id="feedback-temp">0.00%</div>
+                    
+                    <div class="feedback-footer">
+                        <div class="temp-value" id="feedback-temp">0.00%</div>
+                        <div id="ambience-display" class="ambience-text">ATTENTE SIGNAL...</div>
+                    </div>
                 </div>
 
                 <form id="guess-form" class="input-group glass-panel">
@@ -80,7 +87,6 @@
             </header>
             
             <div class="settings-list glass-panel">
-                
                 <div class="setting-item">
                     <div class="setting-info">
                         <span class="setting-name">Synthèse Audio</span>
@@ -102,7 +108,16 @@
                         <span class="slider"></span>
                     </label>
                 </div>
-
+<div class="setting-item">
+    <div class="setting-info">
+        <span class="setting-name">Retour Haptique</span>
+        <small>Vibrations lors des interactions</small>
+    </div>
+    <label class="switch">
+        <input type="checkbox" id="setting-haptic">
+        <span class="slider"></span>
+    </label>
+</div>
                 <div class="setting-group-vertical">
                     <span class="setting-name">Thème Interface</span>
                     <div class="theme-selector">
@@ -118,7 +133,7 @@
             </div>
             
             <div class="credits">
-                <p>LEXICORE OS • V2.1.0</p>
+                <p>LEXICORE OS • V2.2.0</p>
                 <p class="blink">STATUS: ONLINE</p>
             </div>
         </section>
