@@ -1,27 +1,32 @@
 /* =================================================================
-   LEXICORE V3.0 - ENGINE
-   Haptics | Dynamic Atmosphere | Persistent State
+   LEXICORE V4.0 - ENGINE
+   Multi-Mode | Haptics | Procedural Audio | Semantic Logic
    ================================================================= */
 
-const SYSTEM = {
-    version: '3.0',
-    startDate: new Date('2026-02-02T00:00:00'),
+const CORE = {
+    version: '4.0.0',
+    startDate: new Date('2026-02-02T00:00:00'), // Date pivot pour le mode Quotidien
     dictionary: [],
     
-    // État du Jeu (Sauvegardé)
-    todayId: 0,
-    targetWord: '', 
+    // État Actuel
+    mode: 'daily', // daily, archive, training
+    targetWord: '',
     guesses: [],
-    gameState: 'PLAYING', // PLAYING, WON
-
-    // Paramètres
+    state: 'PLAYING', // PLAYING, WON
+    
+    // IDs pour la persistence
+    currentDayId: 0,
+    archiveId: 0,
+    
+    // Configuration
     settings: {
         audio: true,
         haptic: true,
-        perfMode: false,
+        anim: true,
         theme: 'auto'
     },
     
+    // Statistiques globales
     stats: {
         played: 0,
         wins: 0,
@@ -29,13 +34,13 @@ const SYSTEM = {
     }
 };
 
-/* --- 1. AUDIO ENGINE --- */
-class AudioSynth {
+/* --- 1. AUDIO ENGINE (Web Audio API - No MP3) --- */
+class SoundSystem {
     constructor() {
         this.ctx = null;
     }
 
-    unlock() {
+    init() {
         if (!this.ctx) {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         }
@@ -45,8 +50,8 @@ class AudioSynth {
     }
 
     play(type) {
-        if (!SYSTEM.settings.audio) return;
-        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (!CORE.settings.audio) return;
+        this.init();
 
         const t = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
@@ -55,60 +60,61 @@ class AudioSynth {
         gain.connect(this.ctx.destination);
 
         switch (type) {
-            case 'click':
+            case 'ui': // Petit click
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, t);
-                osc.frequency.exponentialRampToValueAtTime(100, t + 0.1);
+                osc.frequency.setValueAtTime(800, t);
+                osc.frequency.exponentialRampToValueAtTime(300, t + 0.05);
+                gain.gain.setValueAtTime(0.02, t);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+                osc.start(t); osc.stop(t + 0.05);
+                break;
+            case 'valid': // Input validé
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, t);
+                osc.frequency.linearRampToValueAtTime(600, t + 0.1);
                 gain.gain.setValueAtTime(0.05, t);
-                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-                osc.start(t);
-                osc.stop(t + 0.1);
+                gain.gain.linearRampToValueAtTime(0.001, t + 0.1);
+                osc.start(t); osc.stop(t + 0.1);
                 break;
-            case 'error':
+            case 'error': // Erreur / Shake
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, t);
+                osc.frequency.linearRampToValueAtTime(50, t + 0.15);
+                gain.gain.setValueAtTime(0.05, t);
+                gain.gain.linearRampToValueAtTime(0.001, t + 0.15);
+                osc.start(t); osc.stop(t + 0.15);
+                break;
+            case 'win': // Victoire
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(150, t);
-                osc.frequency.linearRampToValueAtTime(100, t + 0.2);
+                osc.frequency.setValueAtTime(261.63, t); // Do
+                osc.frequency.setValueAtTime(329.63, t + 0.1); // Mi
+                osc.frequency.setValueAtTime(392.00, t + 0.2); // Sol
+                osc.frequency.setValueAtTime(523.25, t + 0.3); // Do haut
                 gain.gain.setValueAtTime(0.1, t);
-                gain.gain.linearRampToValueAtTime(0.001, t + 0.2);
-                osc.start(t);
-                osc.stop(t + 0.2);
-                break;
-            case 'win':
-                osc.type = 'sine';
-                gain.gain.value = 0.1;
-                osc.frequency.setValueAtTime(440, t); 
-                osc.frequency.setValueAtTime(554, t + 0.15); 
-                osc.frequency.setValueAtTime(659, t + 0.3); 
-                gain.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
-                osc.start(t);
-                osc.stop(t + 1.5);
+                gain.gain.linearRampToValueAtTime(0, t + 1.5);
+                osc.start(t); osc.stop(t + 1.5);
                 break;
         }
     }
 }
-const AUDIO = new AudioSynth();
+const AUDIO = new SoundSystem();
 
-/* --- 2. HAPTIC ENGINE (V3) --- */
-const HAPTIC = {
+/* --- 2. HAPTIC ENGINE --- */
+const HAPTICS = {
     trigger(type) {
-        if (!SYSTEM.settings.haptic || !navigator.vibrate) return;
-
-        switch (type) {
-            case 'input':
-                navigator.vibrate(10); // Micro-clic
-                break;
-            case 'error':
-                navigator.vibrate(300); // Lourd
-                break;
-            case 'success':
-                navigator.vibrate([100, 50, 100]); // Victoire
-                break;
+        if (!CORE.settings.haptic || !navigator.vibrate) return;
+        
+        switch(type) {
+            case 'soft': navigator.vibrate(10); break;
+            case 'medium': navigator.vibrate(25); break;
+            case 'error': navigator.vibrate([30, 50, 30]); break;
+            case 'success': navigator.vibrate([50, 50, 100]); break;
         }
     }
 };
 
 /* --- 3. DOM ELEMENTS --- */
-const DOM = {
+const UI = {
     views: document.querySelectorAll('.view'),
     navBtns: document.querySelectorAll('.nav-btn'),
     form: document.getElementById('guess-form'),
@@ -122,19 +128,28 @@ const DOM = {
     fBar: document.getElementById('temp-bar'),
     fIcon: document.getElementById('temp-icon'),
     ambience: document.getElementById('ambience-display'),
-    nebula: document.querySelector('.nebula-glow'),
     
     // Logs
     miniLogs: document.getElementById('mini-logs'),
     fullLogs: document.getElementById('full-history-list'),
     
-    // System
-    winModal: document.getElementById('victory-modal'),
+    // Mode & Modal
+    modeDisplay: document.getElementById('current-mode-display'),
+    btnMode: document.getElementById('btn-mode-selector'),
+    modalMode: document.getElementById('mode-modal'),
+    closeMode: document.getElementById('close-mode-modal'),
+    modeCards: document.querySelectorAll('.mode-card'),
+    
+    // Victory
+    modalWin: document.getElementById('victory-modal'),
     closeWin: document.getElementById('close-victory'),
+    winWord: document.getElementById('victory-word'),
+    
+    // Settings
     toggles: {
         audio: document.getElementById('setting-audio'),
         haptic: document.getElementById('setting-haptic'),
-        perf: document.getElementById('setting-perf')
+        anim: document.getElementById('setting-anim')
     },
     themeBtns: document.querySelectorAll('.theme-btn'),
     resetBtn: document.getElementById('btn-reset'),
@@ -142,386 +157,411 @@ const DOM = {
     // Stats
     sAttempts: document.getElementById('stat-attempts'),
     sWins: document.getElementById('stat-wins'),
-    sStreak: document.getElementById('stat-streak'),
-    dayBadge: document.getElementById('day-badge')
+    sStreak: document.getElementById('stat-streak')
 };
 
-/* --- 4. INIT & PERSISTENCE --- */
-async function initSystem() {
-    loadGlobalSettings();
-    setupThemeListener();
+/* --- 4. INITIALIZATION --- */
+async function init() {
+    loadSettings();
     applySettings();
-    setupNavigation();
+    setupEventListeners();
     
-    // Audio Unlock
-    const unlockFn = () => { AUDIO.unlock(); };
-    window.addEventListener('click', unlockFn, { once: true });
-    window.addEventListener('touchstart', unlockFn, { once: true });
+    // Débloquer l'audio au premier contact
+    const unlock = () => { AUDIO.init(); window.removeEventListener('click', unlock); window.removeEventListener('touchstart', unlock); };
+    window.addEventListener('click', unlock);
+    window.addEventListener('touchstart', unlock);
 
-    // Calcul ID Jour
-    const now = new Date();
-    const diffTime = now.getTime() - SYSTEM.startDate.getTime();
-    SYSTEM.todayId = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    DOM.dayBadge.textContent = `SESSION #${SYSTEM.todayId}`;
-    
+    // Charger Dictionnaire
     try {
         const res = await fetch('dictionary.json');
-        SYSTEM.dictionary = await res.json();
-        startDailyGame();
+        CORE.dictionary = await res.json();
+        
+        // Calcul du jour actuel
+        const now = new Date();
+        const diff = now.getTime() - CORE.startDate.getTime();
+        CORE.currentDayId = Math.floor(diff / (1000 * 60 * 60 * 24));
+        
+        // Charger le jeu
+        setGameMode(CORE.mode);
+        
     } catch (e) {
-        console.error("Dict Error", e);
-        DOM.ambience.textContent = "ERREUR DE CHARGEMENT";
+        console.error("Erreur chargement dictionnaire", e);
+        UI.ambience.textContent = "ERREUR SYSTÈME";
     }
 }
 
-function startDailyGame() {
-    // Seed pour mot du jour
-    const index = (SYSTEM.todayId * 1337) % SYSTEM.dictionary.length;
-    SYSTEM.targetWord = SYSTEM.dictionary[index];
+/* --- 5. LOGIQUE DE JEU & MODES --- */
+
+function setGameMode(mode) {
+    CORE.mode = mode;
+    saveSettings(); // Sauver le mode préféré
     
-    // Restauration État
-    const saveKey = `lexicore_v3_state_${SYSTEM.todayId}`;
-    const savedState = localStorage.getItem(saveKey);
+    // UI Update
+    UI.modeDisplay.textContent = mode === 'daily' ? `JOUR #${CORE.currentDayId}` : mode.toUpperCase();
+    UI.input.value = '';
+    UI.input.disabled = false;
+    UI.input.placeholder = "SÉQUENCE...";
     
-    if (savedState) {
-        const data = JSON.parse(savedState);
-        SYSTEM.guesses = data.guesses || [];
-        SYSTEM.gameState = data.state || 'PLAYING';
-        
-        // Reconstruction UI
-        SYSTEM.guesses.forEach(g => addLogUI(g));
-        updateStatsUI();
-        
-        // Dernier feedback & Ambiance
-        if (SYSTEM.guesses.length > 0) {
-            const lastGuess = SYSTEM.guesses[SYSTEM.guesses.length - 1];
-            renderFeedback(lastGuess);
-            updateAmbientGlow(lastGuess.temp); // Restaurer la couleur du fond
+    // Logique de chargement par mode
+    if (mode === 'daily') {
+        const index = (CORE.currentDayId * 1337) % CORE.dictionary.length;
+        CORE.targetWord = CORE.dictionary[index];
+        loadGameState(`lexicore_daily_${CORE.currentDayId}`);
+    } else if (mode === 'archive') {
+        // Charge une archive aléatoire mais persistante pour la session si pas finie
+        let savedArch = JSON.parse(localStorage.getItem('lexicore_archive_session'));
+        if (savedArch && savedArch.target) {
+            CORE.targetWord = savedArch.target;
+            CORE.guesses = savedArch.guesses;
+            CORE.state = savedArch.state;
+            restoreUI();
+        } else {
+            // Nouvelle archive
+            const randomId = Math.floor(Math.random() * CORE.currentDayId);
+            const index = (randomId * 1337) % CORE.dictionary.length;
+            CORE.targetWord = CORE.dictionary[index];
+            resetGameData();
         }
-        
-        if (SYSTEM.gameState === 'WON') {
-            triggerVictory(false);
-        }
+    } else if (mode === 'training') {
+        // Mode infini sans sauvegarde
+        const index = Math.floor(Math.random() * CORE.dictionary.length);
+        CORE.targetWord = CORE.dictionary[index];
+        resetGameData();
     }
 }
 
-function saveGameState() {
-    const saveKey = `lexicore_v3_state_${SYSTEM.todayId}`;
-    const data = {
-        guesses: SYSTEM.guesses,
-        state: SYSTEM.gameState
-    };
-    localStorage.setItem(saveKey, JSON.stringify(data));
+function resetGameData() {
+    CORE.guesses = [];
+    CORE.state = 'PLAYING';
+    UI.fullLogs.innerHTML = '';
+    UI.miniLogs.innerHTML = '';
+    UI.card.classList.add('hidden');
+    UI.input.disabled = false;
+    UI.ambience.textContent = "ATTENTE SIGNAL...";
 }
 
-function loadGlobalSettings() {
-    const sSettings = localStorage.getItem('lexicore_v3_settings');
-    if (sSettings) SYSTEM.settings = JSON.parse(sSettings);
+function loadGameState(key) {
+    const saved = localStorage.getItem(key);
+    if (saved) {
+        const data = JSON.parse(saved);
+        CORE.guesses = data.guesses;
+        CORE.state = data.state;
+        restoreUI();
+    } else {
+        resetGameData();
+    }
+}
+
+function restoreUI() {
+    UI.fullLogs.innerHTML = '';
+    UI.miniLogs.innerHTML = '';
+    CORE.guesses.forEach(g => addLogUI(g));
     
-    const sStats = localStorage.getItem('lexicore_v3_stats');
-    if (sStats) SYSTEM.stats = JSON.parse(sStats);
+    if (CORE.guesses.length > 0) {
+        renderFeedback(CORE.guesses[CORE.guesses.length - 1]);
+    }
+    
+    if (CORE.state === 'WON') {
+        UI.input.disabled = true;
+        UI.input.placeholder = "TERMINÉ";
+        UI.ambience.textContent = "SÉQUENCE VALIDÉE";
+    }
+    
+    updateStatsUI();
 }
 
-/* --- 5. GAME LOGIC --- */
+function saveCurrentState() {
+    const data = { guesses: CORE.guesses, state: CORE.state, target: CORE.targetWord };
+    if (CORE.mode === 'daily') {
+        localStorage.setItem(`lexicore_daily_${CORE.currentDayId}`, JSON.stringify(data));
+    } else if (CORE.mode === 'archive') {
+        localStorage.setItem('lexicore_archive_session', JSON.stringify(data));
+    }
+}
+
+/* --- 6. CORE ALGORITHM (Temperature) --- */
 function normalize(str) {
-    if (!str) return "";
-    let clean = str.toLowerCase().trim();
-    clean = clean.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    clean = clean.replace(/[^a-z]/g, "");
-    return clean.toUpperCase();
+    return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "").toUpperCase();
 }
 
-function getTemperature(guess, target) {
+function calculateTemperature(guess, target) {
     if (guess === target) return 100;
-    const m = guess.length, n = target.length;
-    const d = Array.from(Array(m + 1), () => Array(n + 1).fill(0));
-    for (let i = 0; i <= m; i++) d[i][0] = i;
-    for (let j = 0; j <= n; j++) d[0][j] = j;
+    
+    // Algorithme de distance (Levenshtein modifié pour % de proximité)
+    const m = guess.length;
+    const n = target.length;
+    const matrix = Array.from(Array(m + 1), () => Array(n + 1).fill(0));
+
+    for (let i = 0; i <= m; i++) matrix[i][0] = i;
+    for (let j = 0; j <= n; j++) matrix[0][j] = j;
+
     for (let i = 1; i <= m; i++) {
         for (let j = 1; j <= n; j++) {
             const cost = guess[i - 1] === target[j - 1] ? 0 : 1;
-            d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+            matrix[i][j] = Math.min(
+                matrix[i - 1][j] + 1,      // Deletion
+                matrix[i][j - 1] + 1,      // Insertion
+                matrix[i - 1][j - 1] + cost // Substitution
+            );
         }
     }
-    const dist = d[m][n];
-    const maxLen = Math.max(m, n);
-    let percent = Math.max(0, 100 - (dist / maxLen * 100));
-    return parseFloat(percent.toFixed(2));
+
+    const distance = matrix[m][n];
+    const maxLength = Math.max(m, n);
+    // Formule pour donner une "température" positive
+    let percent = Math.max(0, 100 - ((distance / maxLength) * 100));
+    
+    // Bonus de sémantique "fake" (si même première lettre ou longueur)
+    if (guess[0] === target[0]) percent += 2;
+    if (guess.length === target.length) percent += 3;
+    
+    return Math.min(99.9, parseFloat(percent.toFixed(2)));
 }
 
 function handleGuess(e) {
     e.preventDefault();
-    if (SYSTEM.gameState === 'WON') return;
+    if (CORE.state !== 'PLAYING') return;
 
-    let word = normalize(DOM.input.value);
+    let word = normalize(UI.input.value);
 
-    // Pluriel simple
-    if (word.length > 2 && !SYSTEM.dictionary.includes(word) && word.endsWith('S')) {
+    // Gestion Pluriel basique
+    if (word.endsWith('S') && !CORE.dictionary.includes(word)) {
         let singular = word.slice(0, -1);
-        if (SYSTEM.dictionary.includes(singular)) word = singular;
+        if (CORE.dictionary.includes(singular)) word = singular;
     }
 
     // Validation
-    if (word.length < 2 || !SYSTEM.dictionary.includes(word)) {
+    if (word.length < 2 || !CORE.dictionary.includes(word)) {
         triggerShake();
-        AUDIO.play('error');
-        HAPTIC.trigger('error');
-        DOM.ambience.textContent = "ERREUR : MOT INCONNU";
-        DOM.ambience.style.color = "#ff4757";
-        setTimeout(() => DOM.ambience.style.color = "var(--text-secondary)", 1500);
+        UI.ambience.textContent = "MOT INCONNU";
         return;
     }
 
-    if (SYSTEM.guesses.some(g => g.word === word)) {
+    if (CORE.guesses.some(g => g.word === word)) {
         triggerShake();
-        HAPTIC.trigger('error');
-        DOM.input.value = '';
-        DOM.ambience.textContent = "ERREUR : DÉJÀ ANALYSÉ";
+        UI.ambience.textContent = "DÉJÀ ESSAYÉ";
         return;
     }
 
-    // Succès Input
-    HAPTIC.trigger('input'); 
+    // Calcul
+    let temp = calculateTemperature(word, CORE.targetWord);
+    if (word === CORE.targetWord) temp = 100;
 
-    const temp = getTemperature(word, SYSTEM.targetWord);
-    const guessData = { word, temp, time: Date.now() };
+    const turnData = { word, temp, id: CORE.guesses.length + 1 };
+    CORE.guesses.push(turnData);
 
-    SYSTEM.guesses.push(guessData);
-    
-    // Mises à jour
-    addLogUI(guessData);
-    renderFeedback(guessData);
-    updateAmbientGlow(temp); // Change le fond
-    DOM.input.value = '';
+    // Actions
+    addLogUI(turnData);
+    renderFeedback(turnData);
+    UI.input.value = '';
     closeAutocomplete();
     
     if (temp === 100) {
-        SYSTEM.gameState = 'WON';
-        updateGlobalStats(true);
-        triggerVictory(true);
+        CORE.state = 'WON';
+        handleVictory();
     } else {
-        AUDIO.play('click');
+        AUDIO.play('valid');
+        HAPTICS.trigger('medium');
     }
     
-    saveGameState();
+    saveCurrentState();
     updateStatsUI();
 }
 
-/* --- 6. VISUAL FEEDBACK & ATMOSPHERE --- */
-
-function getFeedbackData(temp) {
+/* --- 7. UI FEEDBACK --- */
+function getTempStyle(temp) {
     if (temp === 100) return { color: 'var(--temp-win)', icon: '💎', label: 'CRITIQUE' };
-    if (temp >= 80) return { color: 'var(--temp-hot)', icon: '🌋', label: 'BRÛLANT' };
-    if (temp >= 60) return { color: 'var(--temp-warm)', icon: '🔥', label: 'CHAUD' };
-    if (temp >= 40) return { color: 'var(--temp-neutral)', icon: '☁️', label: 'NEUTRE' };
-    if (temp >= 20) return { color: 'var(--temp-cold)', icon: '❄️', label: 'FROID' };
-    return { color: 'var(--temp-glacial)', icon: '🧊', label: 'GLACIAL' };
-}
-
-// Messages d'ambiance type Terminal
-const MESSAGES = {
-    cold: ["Divergence totale.", "Aucune corrélation.", "Signal perdu.", "Secteur vide."],
-    neutral: ["Alignement partiel.", "Données floues.", "Poursuivre analyse.", "Écho détecté."],
-    warm: ["Convergence en cours.", "Signal thermique.", "Proximité détectée.", "Cible proche."],
-    hot: ["IMPACT IMMINENT.", "CONFIRMATION VISUELLE.", "SECTEUR CRITIQUE.", "HAUTE TEMPÉRATURE."]
-};
-
-function getAmbienceText(temp) {
-    if (temp === 100) return "SÉQUENCE VALIDÉE - SYSTÈME DÉVERROUILLÉ";
-    let pool = MESSAGES.cold;
-    if (temp >= 80) pool = MESSAGES.hot;
-    else if (temp >= 50) pool = MESSAGES.warm;
-    else if (temp >= 25) pool = MESSAGES.neutral;
-    
-    return pool[Math.floor(Math.random() * pool.length)];
-}
-
-// Mise à jour de la couleur du fond (Nebula)
-function updateAmbientGlow(temp) {
-    let color = '#4a69bd'; // Default Blue
-    if (temp < 30) color = '#74b9ff'; // Ice
-    else if (temp < 50) color = '#81ecec'; // Cyan
-    else if (temp < 70) color = '#fab1a0'; // Warm
-    else if (temp < 90) color = '#ff7675'; // Hot
-    else color = '#e17055'; // Burning
-
-    document.documentElement.style.setProperty('--glow-color', color);
+    if (temp >= 75) return { color: 'var(--temp-hot)', icon: '🌋', label: 'BRÛLANT' };
+    if (temp >= 50) return { color: 'var(--temp-warm)', icon: '☀️', label: 'CHAUD' };
+    if (temp >= 25) return { color: 'var(--temp-neutral)', icon: '☁️', label: 'TIÈDE' };
+    return { color: 'var(--temp-glacial)', icon: '🧊', label: 'FROID' };
 }
 
 function renderFeedback(data) {
-    DOM.card.classList.remove('hidden');
-    const style = getFeedbackData(data.temp);
+    UI.card.classList.remove('hidden');
+    const style = getTempStyle(data.temp);
     
-    DOM.fWord.textContent = data.word;
-    DOM.fTemp.textContent = data.temp + "%";
-    DOM.fBar.style.width = data.temp + "%";
-    DOM.fBar.style.backgroundColor = style.color;
-    DOM.fIcon.textContent = style.icon;
-    DOM.card.style.borderColor = style.color;
-    DOM.fTemp.style.color = style.color;
-
-    // Mise à jour texte ambiance
-    DOM.ambience.textContent = getAmbienceText(data.temp);
-    DOM.ambience.style.color = (data.temp >= 70) ? style.color : 'var(--text-secondary)';
+    UI.fWord.textContent = data.word;
+    UI.fTemp.textContent = data.temp === 100 ? "100%" : data.temp.toFixed(2) + "%";
+    UI.fBar.style.width = data.temp + "%";
+    UI.fBar.style.backgroundColor = style.color;
+    UI.fIcon.textContent = style.icon;
+    UI.card.style.borderColor = style.color;
+    UI.fTemp.style.color = style.color;
+    
+    // Ambiance message
+    if (data.temp === 100) UI.ambience.textContent = "SYSTÈME DÉVERROUILLÉ";
+    else if (data.temp < 15) UI.ambience.textContent = "AUCUNE CORRÉLATION";
+    else if (data.temp < 40) UI.ambience.textContent = "SIGNAL FAIBLE";
+    else if (data.temp < 70) UI.ambience.textContent = "APPROCHE DÉTECTÉE";
+    else UI.ambience.textContent = "PROXIMITÉ MAXIMALE";
 }
 
 function addLogUI(data) {
-    const style = getFeedbackData(data.temp);
+    const style = getTempStyle(data.temp);
+    
+    // Full Log
     const li = document.createElement('li');
     li.className = 'log-item';
     li.style.borderLeftColor = style.color;
-    
     li.innerHTML = `
-        <div class="log-left">
-            <span class="log-word">${data.word}</span>
-            <span class="log-badge" style="color:${style.color}; border:1px solid ${style.color}">${style.label}</span>
-        </div>
-        <span style="font-weight:bold; color:${style.color}">${data.temp}°</span>
+        <span>${data.word}</span>
+        <span style="font-weight:bold; color:${style.color}">${data.temp === 100 ? 'MAX' : Math.floor(data.temp) + '°'}</span>
     `;
-    
-    DOM.fullLogs.prepend(li.cloneNode(true));
-    
+    UI.fullLogs.prepend(li); // Ajout au début
+
+    // Mini Log (Terminal)
     const miniLi = document.createElement('li');
     miniLi.className = 'log-item';
-    miniLi.style.borderLeftColor = style.color;
-    miniLi.innerHTML = `<span>${data.word}</span> <span style="font-weight:bold; color:${style.color}">${data.temp}°</span>`;
-    
-    DOM.miniLogs.prepend(miniLi);
-    if (DOM.miniLogs.children.length > 3) DOM.miniLogs.lastChild.remove();
+    miniLi.innerHTML = `<span style="color:${style.color}">●</span> ${data.word}`;
+    UI.miniLogs.prepend(miniLi);
+    if (UI.miniLogs.children.length > 3) UI.miniLogs.lastChild.remove();
 }
 
 function triggerShake() {
-    DOM.form.classList.remove('shake');
-    void DOM.form.offsetWidth;
-    DOM.form.classList.add('shake');
+    UI.form.classList.remove('shake');
+    void UI.form.offsetWidth; // Reflow
+    UI.form.classList.add('shake');
+    AUDIO.play('error');
+    HAPTICS.trigger('error');
 }
 
-function triggerVictory(playSound) {
-    if (playSound) {
-        AUDIO.play('win');
-        HAPTIC.trigger('success'); // Double vibration courte
+function handleVictory() {
+    AUDIO.play('win');
+    HAPTICS.trigger('success');
+    UI.winWord.textContent = CORE.targetWord;
+    UI.modalWin.classList.remove('hidden');
+    
+    // Update global stats only for Daily
+    if (CORE.mode === 'daily') {
+        CORE.stats.wins++;
+        CORE.stats.streak++;
+        CORE.stats.played++;
+        localStorage.setItem('lexicore_stats', JSON.stringify(CORE.stats));
     }
-    
-    document.getElementById('victory-word').textContent = SYSTEM.targetWord;
-    DOM.input.disabled = true;
-    DOM.input.placeholder = "SESSION TERMINÉE";
-    
-    setTimeout(() => {
-        DOM.winModal.classList.remove('hidden');
-    }, 800);
 }
 
-/* --- 7. UTILS & SETTINGS --- */
-function setupNavigation() {
-    DOM.navBtns.forEach(btn => {
+/* --- 8. SETTINGS & UTILS --- */
+function setupEventListeners() {
+    // Nav
+    UI.navBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            HAPTIC.trigger('input');
-            const targetId = btn.dataset.target;
-            
-            DOM.navBtns.forEach(b => b.classList.remove('active'));
+            HAPTICS.trigger('soft');
+            const target = btn.dataset.target;
+            UI.navBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
-            DOM.views.forEach(v => v.classList.remove('active'));
-            document.getElementById(targetId).classList.add('active');
+            UI.views.forEach(v => v.classList.remove('active'));
+            document.getElementById(target).classList.add('active');
         });
     });
 
-    DOM.form.addEventListener('submit', handleGuess);
-    DOM.input.addEventListener('input', handleAutocomplete);
+    // Form
+    UI.form.addEventListener('submit', handleGuess);
+    UI.input.addEventListener('input', handleAutocomplete);
+
+    // Modal Modes
+    UI.btnMode.addEventListener('click', () => UI.modalMode.classList.remove('hidden'));
+    UI.closeMode.addEventListener('click', () => UI.modalMode.classList.add('hidden'));
     
-    // Toggles
-    DOM.toggles.audio.addEventListener('change', e => { SYSTEM.settings.audio = e.target.checked; saveSettings(); });
-    DOM.toggles.haptic.addEventListener('change', e => { 
-        SYSTEM.settings.haptic = e.target.checked; 
-        saveSettings(); 
-        if(e.target.checked) HAPTIC.trigger('input');
-    });
-    DOM.toggles.perf.addEventListener('change', e => {
-        SYSTEM.settings.perfMode = e.target.checked;
-        applySettings();
-        saveSettings();
-    });
-
-    DOM.themeBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            SYSTEM.settings.theme = btn.dataset.theme;
-            applySettings();
-            saveSettings();
+    UI.modeCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const newMode = card.dataset.mode;
+            UI.modalMode.classList.add('hidden');
+            if (newMode !== CORE.mode) setGameMode(newMode);
         });
     });
 
-    DOM.resetBtn.addEventListener('click', () => {
-        if(confirm("Réinitialisation complète ?")) {
+    // Modal Win
+    UI.closeWin.addEventListener('click', () => {
+        UI.modalWin.classList.add('hidden');
+        if(CORE.mode === 'training' || CORE.mode === 'archive') {
+             // Restart optionnel pour ces modes ? Pour l'instant on ferme juste.
+        }
+    });
+
+    // Settings Toggles
+    UI.toggles.audio.addEventListener('change', e => { CORE.settings.audio = e.target.checked; saveSettings(); });
+    UI.toggles.haptic.addEventListener('change', e => { CORE.settings.haptic = e.target.checked; saveSettings(); if(e.target.checked) HAPTICS.trigger('medium'); });
+    UI.toggles.anim.addEventListener('change', e => { CORE.settings.anim = e.target.checked; applySettings(); saveSettings(); });
+
+    UI.themeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            CORE.settings.theme = btn.dataset.theme;
+            applySettings(); saveSettings();
+        });
+    });
+    
+    UI.resetBtn.addEventListener('click', () => {
+        if(confirm("Supprimer toutes les données et recommencer ?")) {
             localStorage.clear();
             location.reload();
         }
     });
-    DOM.closeWin.addEventListener('click', () => DOM.winModal.classList.add('hidden'));
 }
 
-function setupThemeListener() {
-    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
-        if (SYSTEM.settings.theme === 'auto') applyTheme('auto');
-    });
-}
-
-function applySettings() {
-    DOM.toggles.audio.checked = SYSTEM.settings.audio;
-    DOM.toggles.haptic.checked = SYSTEM.settings.haptic;
-    DOM.toggles.perf.checked = SYSTEM.settings.perfMode;
-    DOM.themeBtns.forEach(b => b.classList.toggle('active', b.dataset.theme === SYSTEM.settings.theme));
-    document.body.classList.toggle('perf-mode', SYSTEM.settings.perfMode);
-    applyTheme(SYSTEM.settings.theme);
-}
-
-function applyTheme(mode) {
-    document.body.classList.remove('light-theme');
-    if (mode === 'light') document.body.classList.add('light-theme');
-    else if (mode === 'auto' && window.matchMedia('(prefers-color-scheme: light)').matches) {
-        document.body.classList.add('light-theme');
-    }
-}
-
-function saveSettings() {
-    localStorage.setItem('lexicore_v3_settings', JSON.stringify(SYSTEM.settings));
-}
-
-function updateGlobalStats(win) {
-    if (win) { SYSTEM.stats.wins++; SYSTEM.stats.streak++; } 
-    else { SYSTEM.stats.streak = 0; }
-    SYSTEM.stats.played++;
-    localStorage.setItem('lexicore_v3_stats', JSON.stringify(SYSTEM.stats));
-    updateStatsUI();
-}
-
-function updateStatsUI() {
-    DOM.sAttempts.textContent = SYSTEM.guesses.length;
-    DOM.sWins.textContent = SYSTEM.stats.wins;
-    DOM.sStreak.textContent = SYSTEM.stats.streak;
-}
-
-// Autocomplete
 function handleAutocomplete(e) {
     const val = normalize(e.target.value);
-    DOM.autoList.innerHTML = '';
-    DOM.autoList.classList.add('hidden');
+    UI.autoList.innerHTML = '';
+    UI.autoList.classList.add('hidden');
+    
     if (val.length < 2) return;
-    const matches = SYSTEM.dictionary.filter(w => w.startsWith(val)).slice(0, 4);
+    
+    const matches = CORE.dictionary.filter(w => w.startsWith(val)).slice(0, 4);
     if (matches.length > 0) {
-        DOM.autoList.classList.remove('hidden');
+        UI.autoList.classList.remove('hidden');
         matches.forEach(m => {
             const div = document.createElement('div');
             div.className = 'autocomplete-item';
             div.innerHTML = `<strong>${val}</strong>${m.substring(val.length)}`;
             div.onclick = () => {
-                DOM.input.value = m;
-                DOM.autoList.classList.add('hidden');
-                DOM.input.focus();
+                UI.input.value = m;
+                closeAutocomplete();
+                UI.input.focus();
             };
-            DOM.autoList.appendChild(div);
+            UI.autoList.appendChild(div);
         });
     }
 }
-function closeAutocomplete() { DOM.autoList.classList.add('hidden'); }
+function closeAutocomplete() { UI.autoList.classList.add('hidden'); }
 
-window.addEventListener('load', initSystem);
+function applySettings() {
+    UI.toggles.audio.checked = CORE.settings.audio;
+    UI.toggles.haptic.checked = CORE.settings.haptic;
+    UI.toggles.anim.checked = CORE.settings.anim;
+    
+    // Anim
+    document.body.classList.toggle('no-anim', !CORE.settings.anim);
+    
+    // Theme
+    UI.themeBtns.forEach(b => b.classList.toggle('active', b.dataset.theme === CORE.settings.theme));
+    document.body.classList.remove('light-theme');
+    if (CORE.settings.theme === 'light') document.body.classList.add('light-theme');
+    else if (CORE.settings.theme === 'auto' && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        document.body.classList.add('light-theme');
+    }
+}
+
+function saveSettings() {
+    CORE.settings.mode = CORE.mode;
+    localStorage.setItem('lexicore_settings', JSON.stringify(CORE.settings));
+}
+
+function loadSettings() {
+    const s = localStorage.getItem('lexicore_settings');
+    if (s) {
+        const parsed = JSON.parse(s);
+        CORE.settings = { ...CORE.settings, ...parsed };
+        if(parsed.mode) CORE.mode = parsed.mode;
+    }
+    const st = localStorage.getItem('lexicore_stats');
+    if (st) CORE.stats = JSON.parse(st);
+}
+
+function updateStatsUI() {
+    UI.sAttempts.textContent = CORE.guesses.length;
+    UI.sWins.textContent = CORE.stats.wins;
+    UI.sStreak.textContent = CORE.stats.streak;
+}
+
+// Start
+window.addEventListener('load', init);

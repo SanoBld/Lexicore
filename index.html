@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>LEXICORE V3.0 | Sémantique Avancée</title>
+    <title>LEXICORE | Système Sémantique</title>
     <meta name="theme-color" content="#050508">
-    <meta name="description" content="Système de déduction sémantique. Version 3.0.">
+    <meta name="description" content="Jeu de déduction sémantique et logique.">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -20,18 +20,25 @@
     <main class="app-container">
         
         <section id="view-terminal" class="view active">
-            <header class="view-header">
-                <div class="brand">LEXI<span class="brand-accent">CORE</span> <span class="version-tag">V3.0</span></div>
-                <div class="status-badge" id="day-badge">INIT...</div>
+            <header class="view-header compact-header">
+                <div class="brand-wrapper">
+                    <div class="brand">LEXI<span class="brand-accent">CORE</span></div>
+                    <div class="mode-badge" id="current-mode-display">DAILY</div>
+                </div>
+                <button id="btn-mode-selector" class="icon-btn" aria-label="Changer de mode">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                </button>
             </header>
 
             <div class="game-interface">
-                <div id="feedback-card" class="glass-panel hidden">
+                <div id="feedback-card" class="glass-panel feedback-panel hidden">
                     <div class="card-top">
-                        <span class="label">ANALYSE SPECTRALE</span>
+                        <span class="label">ANALYSE EN COURS</span>
                         <span class="temp-icon" id="temp-icon">❄️</span>
                     </div>
-                    <div class="word-feedback" id="feedback-word">---</div>
+                    <div class="word-display">
+                        <span id="feedback-word">---</span>
+                    </div>
                     
                     <div class="temp-wrapper">
                         <div class="temp-bar-track">
@@ -41,12 +48,12 @@
                     
                     <div class="feedback-footer">
                         <div class="temp-value" id="feedback-temp">0.00%</div>
-                        <div id="ambience-display" class="ambience-text">SYSTÈME EN ATTENTE...</div>
+                        <div id="ambience-display" class="ambience-text">ATTENTE SIGNAL...</div>
                     </div>
                 </div>
 
                 <form id="guess-form" class="input-group glass-panel">
-                    <input type="text" id="guess-input" placeholder="ENTRER SÉQUENCE..." autocomplete="off" spellcheck="false" enterkeyhint="go">
+                    <input type="text" id="guess-input" placeholder="SÉQUENCE..." autocomplete="off" spellcheck="false" enterkeyhint="go">
                     <button type="submit" id="submit-btn" aria-label="Valider">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
@@ -60,6 +67,7 @@
         <section id="view-logs" class="view">
             <header class="view-header">
                 <h2>DONNÉES</h2>
+                <span class="version-tag">DB-LOCALE</span>
             </header>
             
             <div class="stats-grid">
@@ -78,21 +86,24 @@
             </div>
 
             <div class="history-container">
-                <h3 class="section-subtitle">HISTORIQUE</h3>
-                <ul id="full-history-list" class="log-list"></ul>
+                <h3 class="section-subtitle">HISTORIQUE SÉQUENCE</h3>
+                <ul id="full-history-list" class="log-list">
+                    <li class="empty-state">Aucune donnée disponible</li>
+                </ul>
             </div>
         </section>
 
         <section id="view-system" class="view">
             <header class="view-header">
                 <h2>SYSTÈME</h2>
+                <span class="version-tag">V4.0</span>
             </header>
             
             <div class="settings-list glass-panel">
                 <div class="setting-item">
                     <div class="setting-info">
-                        <span class="setting-name">Audio Procédural</span>
-                        <small>Synthèse sonore WebAudio</small>
+                        <span class="setting-name">Synthèse Audio</span>
+                        <small>Sons générés procéduralement</small>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="setting-audio">
@@ -103,7 +114,7 @@
                 <div class="setting-item">
                     <div class="setting-info">
                         <span class="setting-name">Retour Haptique</span>
-                        <small>Vibrations physiques</small>
+                        <small>Vibrations (Mobile)</small>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="setting-haptic">
@@ -113,17 +124,17 @@
 
                 <div class="setting-item">
                     <div class="setting-info">
-                        <span class="setting-name">Mode Performance</span>
-                        <small>Désactiver l'effet Nebula</small>
+                        <span class="setting-name">Effets Visuels</span>
+                        <small>Nebula & Particules (Gourmand)</small>
                     </div>
                     <label class="switch">
-                        <input type="checkbox" id="setting-perf">
+                        <input type="checkbox" id="setting-anim">
                         <span class="slider"></span>
                     </label>
                 </div>
 
                 <div class="setting-group-vertical">
-                    <span class="setting-name">Thème UI</span>
+                    <span class="setting-name">Thème Interface</span>
                     <div class="theme-selector">
                         <button class="theme-btn active" data-theme="auto">AUTO</button>
                         <button class="theme-btn" data-theme="dark">SOMBRE</button>
@@ -132,13 +143,13 @@
                 </div>
 
                 <div class="setting-actions">
-                    <button id="btn-reset" class="danger-btn">RÉINITIALISER DONNÉES</button>
+                    <button id="btn-reset" class="danger-btn">PURGER LE SYSTÈME (RESET)</button>
                 </div>
             </div>
             
             <div class="credits">
-                <p>LEXICORE V3.0 // SYSTEM READY</p>
-                <p class="status-dot">● ONLINE</p>
+                <p>LEXICORE V4.0</p>
+                <p class="status-dot">Sano Bld</p>
             </div>
         </section>
     </main>
@@ -162,7 +173,32 @@
         <div class="modal-content glass-panel victory-style">
             <h2>SÉQUENCE VALIDÉE</h2>
             <div class="victory-word" id="victory-word">---</div>
-            <button id="close-victory" class="action-btn">TERMINER LA SESSION</button>
+            <p id="victory-message">Accès accordé.</p>
+            <div class="modal-actions">
+                <button id="close-victory" class="action-btn primary">CONTINUER</button>
+            </div>
+        </div>
+        <div class="modal-backdrop"></div>
+    </div>
+
+    <div id="mode-modal" class="modal hidden">
+        <div class="modal-content glass-panel">
+            <h2>SÉLECTEUR DE MODE</h2>
+            <div class="mode-options">
+                <button class="mode-card" data-mode="daily">
+                    <span class="mode-title">QUOTIDIEN (Daily)</span>
+                    <span class="mode-desc">Un mot unique par jour. Le classement officiel.</span>
+                </button>
+                <button class="mode-card" data-mode="archive">
+                    <span class="mode-title">ARCHIVES</span>
+                    <span class="mode-desc">Rejouer des anciennes séquences au hasard.</span>
+                </button>
+                <button class="mode-card" data-mode="training">
+                    <span class="mode-title">ENTRAÎNEMENT</span>
+                    <span class="mode-desc">Mots infinis. Pas de stats. Juste la pratique.</span>
+                </button>
+            </div>
+            <button id="close-mode-modal" class="text-btn">ANNULER</button>
         </div>
         <div class="modal-backdrop"></div>
     </div>
