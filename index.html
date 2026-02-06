@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>LEXICORE | Sémantique Avancée</title>
     <meta name="theme-color" content="#050508">
-    <meta name="description" content="Jeu de déduction sémantique par thèmes.">
+    <meta name="description" content="Jeu de déduction sémantique et morphologique.">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -25,15 +25,22 @@
                     <div class="brand">LEXI<span class="brand-accent">CORE</span></div>
                     <div class="mode-badge" id="current-mode-display">DAILY</div>
                 </div>
-                <button id="btn-mode-selector" class="icon-btn" aria-label="Changer de mode">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
-                </button>
+                <div class="header-controls">
+                    <button id="engine-toggle" class="engine-btn" aria-label="Changer de moteur">
+                        <span id="engine-label">SÉMANTIQUE</span>
+                        <div class="engine-dot"></div>
+                    </button>
+                    
+                    <button id="btn-mode-selector" class="icon-btn" aria-label="Changer de mode">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                    </button>
+                </div>
             </header>
 
             <div class="game-interface">
                 <div id="feedback-card" class="glass-panel feedback-panel hidden">
                     <div class="card-top">
-                        <span class="label">PROXIMITÉ SÉMANTIQUE</span>
+                        <span class="label" id="feedback-label">PROXIMITÉ SÉMANTIQUE</span>
                         <span class="temp-icon" id="temp-icon">❄️</span>
                     </div>
                     <div class="word-display">
@@ -59,15 +66,20 @@
                     </button>
                     <div id="autocomplete-list" class="autocomplete-items hidden"></div>
                 </form>
+                
+                <div class="status-indicator">
+                    <span id="network-status" class="status-pill online">ONLINE API</span>
+                </div>
 
-                <div id="mini-logs" class="mini-logs-list"></div>
+                <div id="mini-logs" class="mini-logs-list">
+                    </div>
             </div>
         </section>
 
         <section id="view-logs" class="view">
             <header class="view-header">
                 <h2>DONNÉES</h2>
-                <span class="version-tag">LOCALE</span>
+                <span class="version-tag">TRIÉ PAR SCORE</span>
             </header>
             
             <div class="stats-grid">
@@ -76,18 +88,18 @@
                     <span class="stat-value" id="stat-attempts">0</span>
                 </div>
                 <div class="stat-box glass-panel">
-                    <span class="stat-label">VICTOIRES</span>
-                    <span class="stat-value" id="stat-wins">0</span>
+                    <span class="stat-label">TOP SCORE</span>
+                    <span class="stat-value" id="stat-top">0%</span>
                 </div>
                 <div class="stat-box glass-panel">
-                    <span class="stat-label">SÉRIE</span>
-                    <span class="stat-value" id="stat-streak">0</span>
+                    <span class="stat-label">MOYENNE</span>
+                    <span class="stat-value" id="stat-avg">0%</span>
                 </div>
             </div>
 
             <div class="history-container">
                 <h3 class="section-subtitle">HISTORIQUE PARTIE</h3>
-                <ul id="full-history-list" class="log-list">
+                <ul id="full-history-list" class="log-list smart-list">
                     <li class="empty-state">Aucune donnée disponible</li>
                 </ul>
             </div>
@@ -96,16 +108,23 @@
         <section id="view-system" class="view">
             <header class="view-header">
                 <h2>SYSTÈME</h2>
-                <span class="version-tag">V5.0-SEMANTIX</span>
+                <span class="version-tag">V6.1-HYBRID</span>
             </header>
             
             <div class="settings-list glass-panel">
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <span class="setting-name">Mise à Jour Force</span>
-                        <small>Vider cache & recharger</small>
+                
+                <div class="setting-group-vertical">
+                    <span class="setting-name">Personnalisation Interface</span>
+                    <div class="color-picker-grid">
+                        <div class="color-control">
+                            <label>Accent</label>
+                            <input type="color" id="color-accent" value="#6c5ce7">
+                        </div>
+                        <div class="color-control">
+                            <label>Fond</label>
+                            <input type="color" id="color-bg" value="#050508">
+                        </div>
                     </div>
-                    <button id="btn-force-update" class="small-action-btn">UPDATE</button>
                 </div>
 
                 <div class="setting-item">
@@ -156,8 +175,8 @@
             </div>
             
             <div class="credits">
-                <p>LEXICORE V5.0 | MOTEUR SÉMANTIQUE</p>
-                <p class="status-dot">● SYSTÈME PRÊT</p>
+                <p>LEXICORE V6.1 | HYBRID ENGINE</p>
+                <p>Powered by Datamuse & FreeDict API</p>
             </div>
         </section>
     </main>
@@ -179,9 +198,34 @@
 
     <div id="victory-modal" class="modal hidden">
         <div class="modal-content glass-panel victory-style">
-            <h2>SÉQUENCE VALIDÉE</h2>
+            <div class="victory-header">
+                <h2>SÉQUENCE VALIDÉE</h2>
+            </div>
+            
             <div class="victory-word" id="victory-word">---</div>
-            <p id="victory-message">Accès accordé.</p>
+            
+            <div class="victory-details-container">
+                <div class="word-definition" id="victory-definition">
+                    <span class="loader-text">Chargement définition...</span>
+                </div>
+                
+                <div class="victory-stats">
+                    <div class="v-stat">
+                        <span class="v-label">Essais</span>
+                        <span class="v-val" id="v-attempts">0</span>
+                    </div>
+                    <div class="v-stat">
+                        <span class="v-label">Précision</span>
+                        <span class="v-val" id="v-accuracy">0%</span>
+                    </div>
+                </div>
+
+                <div class="similarity-path">
+                    <h4>Mots les plus proches trouvés :</h4>
+                    <div id="victory-top3" class="top3-list"></div>
+                </div>
+            </div>
+
             <div class="modal-actions">
                 <button id="close-victory" class="action-btn primary">CONTINUER</button>
             </div>
@@ -192,7 +236,6 @@
     <div id="mode-modal" class="modal hidden">
         <div class="modal-content glass-panel extended-modal">
             <h2>SÉLECTION DU MODE</h2>
-            
             <div class="mode-options">
                 <button class="mode-card" data-mode="daily">
                     <span class="mode-title">QUOTIDIEN (Daily)</span>
@@ -203,13 +246,9 @@
                     <span class="mode-desc">Infini. Juste pour pratiquer.</span>
                 </button>
             </div>
-
             <hr class="modal-divider">
-
             <h3>ARCHIVES TEMPORELLES</h3>
-            <div class="archive-grid" id="archive-grid">
-                </div>
-
+            <div class="archive-grid" id="archive-grid"></div>
             <button id="close-mode-modal" class="text-btn">FERMER</button>
         </div>
         <div class="modal-backdrop"></div>

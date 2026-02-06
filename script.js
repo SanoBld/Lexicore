@@ -1,166 +1,303 @@
 /* =================================================================
-   LEXICORE V5.0 - SEMANTIC ENGINE & ARCHIVES
-   Hybrid Semantic Logic | Categories | LocalStorage Persistence
+   LEXICORE V6.1 - CORRECTION & OPTIMISATION
+   Fix: UI Selectors, Event Loop, Local Dictionary
    ================================================================= */
 
-/* --- 0. DICTIONNAIRE SEMANTIQUE (SIMULÉ) ---
-   Pour un vrai sémantique, nous classons les mots par "TAGS".
-   Le moteur calcule la proximité des tags en priorité.
-*/
-const THEMATIC_DB = {
-    // CORPS HUMAIN & BIOLOGIE
-    "CORPS": ["MAIN", "PIED", "TETE", "BRAS", "JAMBE", "OEIL", "NEZ", "BOUCHE", "DENT", "LANGUE", "OREILLE", "DOIGT", "ONGLE", "PEAU", "OS", "SANG", "COEUR", "POUMON", "ESTOMAC", "FOIE", "REIN", "CERVEAU", "MUSCLE", "VEINE", "ARTERE", "POIL", "CHEVEU", "BARBE", "MOUSTACHE", "CIL", "SOURCIL", "FRONT", "JOUE", "MENTON", "COU", "EPAULE", "COUDE", "POIGNET", "HANCHE", "GENOU", "CHEVILLE", "TALON", "ORTEIL", "DOS", "VENTRE", "POITRINE", "SEIN", "FESSE", "CUISSE", "MOLLET", "VISAGE", "SQUELETTE", "CRANE", "SALIVE", "SUEUR", "LARME", "URINE", "CELLULE", "ADN", "GENE", "VIRUS", "BACTERIE", "MICROBE"],
-    
-    // NATURE & ELEMENTS
-    "NATURE": ["ARBRE", "FLEUR", "HERBE", "PLANTE", "FEUILLE", "BRANCHE", "RACINE", "TRONC", "BOIS", "FORET", "JUNGLE", "MONTAGNE", "COLLINE", "VALLEE", "PLAINE", "CHAMP", "DESERT", "DUNE", "SABLE", "PLAGE", "MER", "OCEAN", "RIVIERE", "FLEUVE", "LAC", "ETANG", "RUISSEAU", "CASCADE", "EAU", "FEU", "AIR", "TERRE", "VENT", "PLUIE", "NEIGE", "GRELE", "ORAGE", "ECLAIR", "TONNERRE", "NUAGE", "CIEL", "SOLEIL", "LUNE", "ETOILE", "PLANETE", "UNIVERS", "GALAXIE", "COMETE", "ASTEROIDE", "METEO", "CLIMAT", "SAISON", "PRINTEMPS", "ETE", "AUTOMNE", "HIVER", "FROID", "CHAUD", "GLACE", "VOLCAN", "LAVE", "ROCHER", "PIERRE", "CAILLOU"],
-    
-    // ANIMAUX
-    "ANIMAL": ["CHIEN", "CHAT", "CHEVAL", "VACHE", "COCHON", "MOUTON", "CHEVRE", "POULE", "COQ", "CANARD", "OIE", "DINDE", "LAPIN", "SOURIS", "RAT", "HAMSTER", "OISEAU", "AIGLE", "FAUCON", "HIBOU", "CHOUETTE", "PERROQUET", "PIGEON", "MOINEAU", "CORBEAU", "POISSON", "REQUIN", "BALEINE", "DAUPHIN", "PHOQUE", "PINGOUIN", "OURS", "LION", "TIGRE", "PANTHERE", "LEOPARD", "GUEPARD", "LOUP", "RENARD", "ELEPHANT", "GIRAFE", "ZEBRE", "HIPPOPOTAME", "RHINOCEROS", "SINGE", "GORILLE", "CHIMPANZE", "SERPENT", "LEZARD", "CROCODILE", "TORTUE", "GRENOUILLE", "CRAPAUD", "INSECTE", "MOUCHE", "MOUSTIQUE", "ABEILLE", "GUEPE", "FOURMI", "PAPILLON", "ARAIGNEE", "SCORPION", "CRABE", "CREVETTE", "HOMARD", "MOULE", "HUITRE", "ESCARGOT", "LIMACE", "VER"],
-    
-    // MAISON & OBJETS
-    "MAISON": ["MAISON", "APPARTEMENT", "IMMEUBLE", "CHATEAU", "CABANE", "MUR", "SOL", "PLAFOND", "TOIT", "PORTE", "FENETRE", "ESCALIER", "ASCENSEUR", "COULOIR", "CHAMBRE", "SALON", "CUISINE", "SALLE", "BAIN", "TOILETTE", "GARAGE", "CAVE", "GRENIER", "BALCON", "TERRASSE", "JARDIN", "MEUBLE", "TABLE", "CHAISE", "FAUTEUIL", "CANAPE", "LIT", "ARMOIRE", "COMMODE", "ETAGERE", "BUREAU", "LAMPE", "TAPIS", "RIDEAU", "MIROIR", "CADRE", "VASE", "HORLOGE", "TELEVISION", "RADIO", "ORDINATEUR", "TELEPHONE", "REFRIGERATEUR", "CONGELATEUR", "FOUR", "MICROONDE", "LAVEVAISSELLE", "LAVELINGE", "SECHELINGE", "ASPIRATEUR", "FER", "REPASSER", "BALAI", "SEAU", "EPONGE", "CHIFFON", "POUBELLE", "ASSIETTE", "VERRE", "TASSE", "BOL", "CUILLERE", "FOURCHETTE", "COUTEAU", "CASSEROLE", "POELE", "PLAT"],
-    
-    // VETEMENTS & MODE
-    "VETEMENT": ["PANTALON", "JEAN", "JUPE", "ROBE", "SHORT", "T-SHIRT", "CHEMISE", "PULL", "GILET", "VESTE", "MANTEAU", "BLOUSON", "IMPERMEABLE", "COSTUME", "CRAVATE", "NOEUD", "PAPILLON", "CHAUSSETTE", "COLLANT", "CHAUSSURE", "BASKET", "BOTTE", "SANDALE", "CHANDEAIL", "PYJAMA", "SLIP", "CULOTTE", "SOUTIENGORGE", "MAILLOT", "BAIN", "BONNET", "ECHARPE", "GANT", "CHAPEAU", "CASQUETTE", "CEINTURE", "BIJOU", "COLLIER", "BRACELET", "BAGUE", "BOUCLE", "OREILLE", "MONTRE", "LUNETTE", "SAC", "VALISE", "PARAPLUIE", "TISSU", "COTON", "LAINE", "SOIE", "CUIR", "LIN", "VELOURS", "MODE", "STYLE", "COUTURE", "BOUTON", "FERMETURE", "ECLAIR", "POCHE"],
-    
-    // ALIMENTS
-    "NOURRITURE": ["PAIN", "BEURRE", "CONFITURE", "MIEL", "CEREALE", "LAIT", "YAOURT", "FROMAGE", "OEUF", "VIANDE", "POISSON", "POULET", "BOEUF", "PORC", "AGNEAU", "JAMBON", "SAUCISSE", "STEAK", "RIZ", "PATE", "POMME", "TERRE", "LEGUME", "FRUIT", "SALADE", "TOMATE", "CONCOMBRE", "CAROTTE", "OIGNON", "AIL", "CHOU", "HARICOT", "POIS", "EPINARD", "COURGETTE", "AUBERGINE", "POIVRON", "CHAMPIGNON", "AVOCAT", "CITRON", "ORANGE", "PAMPLEMOUSSE", "MANDARINE", "BANANE", "POMME", "POIRE", "RAISIN", "FRAISE", "FRAMBOISE", "MYRTILLE", "CASSIS", "GROSEILLE", "CERISE", "PECHE", "ABRICOT", "PRUNE", "MELON", "PASTEQUE", "ANANAS", "KIWI", "MANGUE", "NOIX", "NOISETTE", "AMANDE", "CACAHUETE", "PISTACHE", "CHOCOLAT", "GATEAU", "BISCUIT", "TARTE", "GLACE", "CREPE", "GAUFRE", "SUCRE", "SEL", "POIVRE", "EPICE", "HUILE", "VINAIGRE", "EAU", "JUS", "SODA", "COCA", "CAFE", "THE", "VIN", "BIERE", "ALCOOL"],
+document.addEventListener('DOMContentLoaded', () => {
+    // Le code ne se lance que lorsque le HTML est prêt.
+    init();
+});
 
-    // TRANSPORTS & VILLE
-    "VILLE": ["VILLE", "VILLAGE", "RUE", "ROUTE", "AVENUE", "BOULEVARD", "PLACE", "TROTTOIR", "PASSAGE", "PIETON", "FEU", "ROUGE", "PANNEAU", "STOP", "VOITURE", "CAMION", "BUS", "TRAMWAY", "METRO", "TRAIN", "AVION", "BATEAU", "VELO", "MOTO", "SCOOTER", "TAXI", "GARE", "AEROPORT", "PORT", "STATION", "SERVICE", "PARKING", "GARAGE", "PONT", "TUNNEL", "AUTOROUTE", "PEAGE", "VITESSE", "MOTEUR", "ROUE", "PNEU", "ESSENCE", "DIESEL", "ELECTRIQUE", "CONDUCTEUR", "PASSAGER", "BILLET", "TICKET", "VOYAGE", "DEPART", "ARRIVEE"],
-
-    // EMOTIONS & ABSTRAIT
-    "ABSTRAIT": ["AMOUR", "HAINE", "JOIE", "TRISTESSE", "COLERE", "PEUR", "SURPRISE", "DEGOUT", "HONTE", "FIERTE", "JALOUSIE", "ENVIE", "ESPOIR", "DESESPOIR", "COURAGE", "LACHETE", "BONHEUR", "MALHEUR", "CHANCE", "MALCHANCE", "DESTIN", "HASARD", "VIE", "MORT", "NAISSANCE", "AME", "ESPRIT", "CORPS", "PENSEE", "IDEE", "REVE", "CAUCHEMAR", "MEMOIRE", "SOUVENIR", "OUBLI", "INTELLIGENCE", "BETISE", "SAGESSE", "FOLIE", "VERITE", "MENSONGE", "JUSTICE", "INJUSTICE", "PAIX", "GUERRE", "LIBERTE", "PRISON", "LOI", "REGLE", "DROIT", "DEVOIR", "POUVOIR", "ARGENT", "TEMPS", "ESPACE", "DEBUT", "FIN"]
+// --- 0. CONFIGURATION ---
+const CONFIG = {
+    API_SEMANTIC: 'https://api.datamuse.com/words', 
+    API_DEF: 'https://api.dictionaryapi.dev/api/v2/entries/fr/',
+    MAX_API_CONTEXT: 1000,
+    CACHE_DURATION: 1000 * 60 * 60 * 24 // 24 heures
 };
 
-// Fusionner tout pour la recherche globale
-let FLAT_DICTIONARY = [];
-Object.values(THEMATIC_DB).forEach(list => FLAT_DICTIONARY.push(...list));
-FLAT_DICTIONARY = [...new Set(FLAT_DICTIONARY.sort())]; // Unique & Trié
-
+// --- 1. CORE STATE (ÉTAT DU JEU) ---
 const CORE = {
-    version: '5.0.0',
-    startDate: new Date('2026-02-02T00:00:00'), // Point de départ des archives
+    version: '6.1.0',
+    startDate: new Date('2026-02-02T00:00:00'),
     
-    // État
-    mode: 'daily', 
+    mode: 'daily',
     targetWord: '',
-    targetCategory: '',
     guesses: [],
     state: 'PLAYING',
+    currentEngine: 'semantic', // 'semantic' ou 'ortho'
     
-    // IDs
+    semanticMap: new Map(),
+    dictionary: [], // Sera rempli par le fetch ou la liste de secours
+    online: navigator.onLine,
+    
     currentDayId: 0,
-    selectedArchiveId: null, // Pour le mode archive
+    selectedArchiveId: null,
     
     settings: {
         audio: true,
         haptic: true,
         anim: true,
-        theme: 'auto'
+        theme: 'auto',
+        colors: { accent: '#6c5ce7', bg: '#050508' }
     },
-    
-    // Persistence globale
-    progress: {} // { "day_0": "WON", "day_1": "LOST" }
+    progress: {} 
 };
 
-/* --- 1. AUDIO ENGINE (No MP3) --- */
-class SoundSystem {
-    constructor() { this.ctx = null; }
-    init() {
-        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        if (this.ctx.state === 'suspended') this.ctx.resume();
-    }
-    play(type) {
-        if (!CORE.settings.audio) return;
-        this.init();
-        const t = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.connect(gain); gain.connect(this.ctx.destination);
+// Liste de secours au cas où dictionary.json ne charge pas (ex: blocage CORS en local)
+const BACKUP_DB = [
+    "ACCUEIL", "AEROPORT", "AFFAIRE", "AGENCE", "ALBUM", "ANIMAL", "APPEL", "ARBRE", "ARGENT", "ARMEE",
+    "AVION", "AVOCAT", "BATEAU", "BUREAU", "CAFE", "CAMION", "CHAT", "CHIEN", "CHOCOLAT", "CIEL",
+    "CLIENT", "COEUR", "CONTRAT", "CORPS", "COULEUR", "CUISINE", "DANGER", "DENT", "DESSIN", "DETTE",
+    "DIEU", "DOCTEUR", "DROIT", "ECOLE", "EGLISE", "ENFANT", "ESPRIT", "ETE", "ETOILE", "EXEMPLE",
+    "FAIM", "FAMILLE", "FEMME", "FERME", "FETE", "FEU", "FILLE", "FILM", "FLEUR", "FORCE", "FORET",
+    "FROID", "FRUIT", "GARCON", "GATEAU", "GAUCHE", "GENOU", "GUERRE", "HISTOIRE", "HIVER", "HOMME",
+    "HOTEL", "ILE", "IMAGE", "JARDIN", "JOIE", "JOUR", "JOURNAL", "LAIT", "LIVRE", "LUMIERE", "LUNE",
+    "MAISON", "MAMAN", "MARIAGE", "MATIN", "MEDECIN", "MER", "METIER", "MIROIR", "MONDE", "MONTAGNE",
+    "MORT", "MOT", "MUSIQUE", "NATURE", "NEIGE", "NOEL", "NUIT", "OCEAN", "OISEAU", "OR", "ORDINATEUR",
+    "PAIN", "PAPIER", "PARADIS", "PARC", "PAYS", "PEUR", "PHOTO", "PIED", "PIERRE", "PLACE", "PLAGE",
+    "PLUIE", "POISSON", "POLICE", "POMME", "PORTE", "POULET", "PRINTEMPS", "PRIX", "PROBLEME", "QUARTIER",
+    "RADIO", "RAISON", "RAPPORT", "REGARD", "REINE", "REPAS", "REVE", "RIRE", "RIVIERE", "ROBE", "ROI",
+    "ROUTE", "RUE", "SABLE", "SAC", "SAISON", "SALLE", "SANTE", "SCIENCE", "SEL", "SEMAINE", "SERPENT",
+    "SILENCE", "SOLEIL", "SOLUTION", "SOMMEIL", "SOURCE", "SPORT", "TABLE", "TELEPHONE", "TEMPS", "TERRE",
+    "THE", "THEATRE", "TITRE", "TRAIN", "TRAVAIL", "TRISTESSE", "VACANCES", "VENT", "VERITE", "VERRE",
+    "VICTOIRE", "VIE", "VILLE", "VIN", "VITESSSE", "VOITURE", "VOIX", "VOYAGE", "YEUX", "ZONE"
+];
 
-        if(type === 'ui') {
-            osc.frequency.setValueAtTime(800, t); osc.frequency.exponentialRampToValueAtTime(300, t+0.05);
-            gain.gain.setValueAtTime(0.02, t); gain.gain.exponentialRampToValueAtTime(0.001, t+0.05);
-            osc.start(t); osc.stop(t+0.05);
-        } else if(type === 'valid') {
-            osc.type = 'triangle'; osc.frequency.setValueAtTime(300, t); osc.frequency.linearRampToValueAtTime(500, t+0.1);
-            gain.gain.setValueAtTime(0.05, t); gain.gain.linearRampToValueAtTime(0, t+0.1);
-            osc.start(t); osc.stop(t+0.1);
-        } else if(type === 'error') {
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, t); osc.frequency.linearRampToValueAtTime(50, t+0.2);
-            gain.gain.setValueAtTime(0.05, t); gain.gain.linearRampToValueAtTime(0, t+0.2);
-            osc.start(t); osc.stop(t+0.2);
-        } else if(type === 'win') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(523, t); osc.frequency.setValueAtTime(659, t+0.1); osc.frequency.setValueAtTime(783, t+0.2);
-            gain.gain.setValueAtTime(0.1, t); gain.gain.linearRampToValueAtTime(0, t+1);
-            osc.start(t); osc.stop(t+1);
+// --- 2. GESTIONNAIRE D'INTERFACE (UI) ---
+// On le définit globalement mais on remplit les éléments dans init()
+const UI = {
+    // Sera peuplé au chargement pour éviter les erreurs "null"
+};
+
+// --- 3. THEME MANAGER ---
+class ThemeManager {
+    static init() {
+        // Application initiale
+        this.applyColor('accent', CORE.settings.colors.accent);
+        this.applyColor('bg', CORE.settings.colors.bg);
+        
+        // Configuration des inputs
+        const inputAccent = document.getElementById('color-accent');
+        const inputBg = document.getElementById('color-bg');
+
+        if (inputAccent) {
+            inputAccent.value = CORE.settings.colors.accent;
+            inputAccent.addEventListener('input', (e) => this.updateSetting('accent', e.target.value));
+        }
+        
+        if (inputBg) {
+            inputBg.value = CORE.settings.colors.bg;
+            inputBg.addEventListener('input', (e) => this.updateSetting('bg', e.target.value));
+        }
+
+        // Application du thème clair/sombre
+        applyThemeClass();
+    }
+
+    static updateSetting(key, val) {
+        CORE.settings.colors[key] = val;
+        this.applyColor(key, val);
+        saveSettings();
+    }
+
+    static applyColor(key, val) {
+        if(key === 'accent') {
+            document.documentElement.style.setProperty('--accent', val);
+            // Conversion simple pour l'opacité (approximation hex)
+            document.documentElement.style.setProperty('--accent-glow', val + '66'); 
+        }
+        if(key === 'bg') {
+            document.documentElement.style.setProperty('--bg-main', val);
         }
     }
 }
-const AUDIO = new SoundSystem();
 
-/* --- 2. HAPTICS --- */
-const HAPTICS = {
-    trigger(type) {
-        if (!CORE.settings.haptic || !navigator.vibrate) return;
-        if(type === 'soft') navigator.vibrate(10);
-        if(type === 'medium') navigator.vibrate(25);
-        if(type === 'error') navigator.vibrate([30, 50, 30]);
-        if(type === 'success') navigator.vibrate([50, 50, 100]);
+// --- 4. ENGINE & API ---
+class SemanticEngine {
+    static async initGame(target) {
+        CORE.targetWord = target;
+        CORE.semanticMap.clear();
+        
+        const statusEl = document.getElementById('network-status');
+        
+        if (!navigator.onLine) {
+            this.setOfflineMode(statusEl);
+            return;
+        }
+
+        const cacheKey = `lexicore_cache_${target}`;
+        const cached = localStorage.getItem(cacheKey);
+        
+        if (cached) {
+            try {
+                const data = JSON.parse(cached);
+                if (Date.now() - data.ts < CONFIG.CACHE_DURATION) {
+                    console.log("Chargé depuis le cache");
+                    this.buildMap(data.words);
+                    if(statusEl) {
+                        statusEl.className = 'status-pill online';
+                        statusEl.textContent = 'API CACHED';
+                    }
+                    return;
+                }
+            } catch(e) { localStorage.removeItem(cacheKey); }
+        }
+
+        try {
+            if(statusEl) statusEl.textContent = 'SYNC...';
+            const response = await fetch(`${CONFIG.API_SEMANTIC}?ml=${target}&max=${CONFIG.MAX_API_CONTEXT}`);
+            if (!response.ok) throw new Error('API Error');
+            const data = await response.json();
+            
+            localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), words: data }));
+            
+            this.buildMap(data);
+            if(statusEl) {
+                statusEl.className = 'status-pill online';
+                statusEl.textContent = 'API ONLINE';
+            }
+        } catch (e) {
+            console.error("API Fetch Failed", e);
+            this.setOfflineMode(statusEl);
+        }
     }
-};
 
-/* --- 3. DOM & UI --- */
-const UI = {
-    views: document.querySelectorAll('.view'),
-    navBtns: document.querySelectorAll('.nav-btn'),
-    form: document.getElementById('guess-form'),
-    input: document.getElementById('guess-input'),
-    autoList: document.getElementById('autocomplete-list'),
-    card: document.getElementById('feedback-card'),
-    fWord: document.getElementById('feedback-word'),
-    fTemp: document.getElementById('feedback-temp'),
-    fBar: document.getElementById('temp-bar'),
-    fIcon: document.getElementById('temp-icon'),
-    ambience: document.getElementById('ambience-display'),
-    miniLogs: document.getElementById('mini-logs'),
-    fullLogs: document.getElementById('full-history-list'),
-    modeDisplay: document.getElementById('current-mode-display'),
-    btnMode: document.getElementById('btn-mode-selector'),
-    modalMode: document.getElementById('mode-modal'),
-    closeMode: document.getElementById('close-mode-modal'),
-    modeCards: document.querySelectorAll('.mode-card'),
-    modalWin: document.getElementById('victory-modal'),
-    closeWin: document.getElementById('close-victory'),
-    winWord: document.getElementById('victory-word'),
-    archiveGrid: document.getElementById('archive-grid'),
-    btnForceUpdate: document.getElementById('btn-force-update'),
-    btnReset: document.getElementById('btn-reset'),
+    static setOfflineMode(el) {
+        CORE.online = false;
+        if(el) {
+            el.className = 'status-pill offline';
+            el.textContent = 'OFFLINE MODE';
+        }
+    }
+
+    static buildMap(apiData) {
+        if(!apiData || apiData.length === 0) return;
+        apiData.forEach((item, index) => {
+            const word = normalize(item.word);
+            let score = Math.max(0, 100 - (index / apiData.length) * 85); 
+            score = parseFloat(score.toFixed(2));
+            CORE.semanticMap.set(word, score);
+        });
+    }
+
+    static calculateScore(guess) {
+        if (guess === CORE.targetWord) return 100;
+
+        if (CORE.currentEngine === 'ortho') {
+            return this.calculateLevenshteinScore(guess, CORE.targetWord);
+        } else {
+            // Sémantique
+            if (CORE.semanticMap.has(guess)) return CORE.semanticMap.get(guess);
+            
+            const orthoScore = this.calculateLevenshteinScore(guess, CORE.targetWord);
+            if (!CORE.online) return orthoScore;
+            return orthoScore > 85 ? orthoScore : Math.min(10, orthoScore * 0.2); 
+        }
+    }
+
+    static calculateLevenshteinScore(a, b) {
+        const m = a.length, n = b.length;
+        const matrix = Array.from(Array(m + 1), () => Array(n + 1).fill(0));
+        for (let i = 0; i <= m; i++) matrix[i][0] = i;
+        for (let j = 0; j <= n; j++) matrix[0][j] = j;
+        for (let i = 1; i <= m; i++) {
+            for (let j = 1; j <= n; j++) {
+                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                matrix[i][j] = Math.min(matrix[i-1][j]+1, matrix[i][j-1]+1, matrix[i-1][j-1]+cost);
+            }
+        }
+        const dist = matrix[m][n];
+        return parseFloat(Math.max(0, 100 - ((dist / Math.max(m, n)) * 100)).toFixed(2));
+    }
+}
+
+// --- 5. INITIALISATION & LOGIQUE ---
+
+async function init() {
+    // 1. Récupération des éléments DOM (CRITIQUE : Doit être fait ici)
+    populateUI();
     
-    // Stats
-    sAttempts: document.getElementById('stat-attempts'),
-    sWins: document.getElementById('stat-wins'),
-    sStreak: document.getElementById('stat-streak')
-};
-
-/* --- 4. INIT & DATA --- */
-function init() {
+    // 2. Chargement Paramètres
     loadSettings();
+    ThemeManager.init();
+
+    // 3. Chargement Dictionnaire
+    await loadDictionary();
+
+    // 4. Calcul jour et Event Listeners
     calculateCurrentDay();
     setupEventListeners();
-    applySettings();
-
-    // Déblocage Audio
+    
+    // 5. Unlock Audio Context
     const unlock = () => { AUDIO.init(); window.removeEventListener('click', unlock); window.removeEventListener('touchstart', unlock); };
     window.addEventListener('click', unlock);
     window.addEventListener('touchstart', unlock);
 
-    // Initialisation Mode
+    // 6. Lancement mode
     if(CORE.mode === 'daily') setGameMode('daily');
     else if (CORE.mode === 'training') setGameMode('training');
     else if (CORE.mode.startsWith('archive_')) setGameMode(CORE.mode);
+}
+
+function populateUI() {
+    // On mappe tous les éléments ID ici pour être sûr qu'ils existent
+    UI.views = document.querySelectorAll('.view');
+    UI.navBtns = document.querySelectorAll('.nav-btn');
+    UI.form = document.getElementById('guess-form');
+    UI.input = document.getElementById('guess-input');
+    UI.autoList = document.getElementById('autocomplete-list');
+    
+    UI.card = document.getElementById('feedback-card');
+    UI.fWord = document.getElementById('feedback-word');
+    UI.fTemp = document.getElementById('feedback-temp');
+    UI.fBar = document.getElementById('temp-bar');
+    UI.fIcon = document.getElementById('temp-icon');
+    UI.ambience = document.getElementById('ambience-display');
+    
+    UI.miniLogs = document.getElementById('mini-logs');
+    UI.fullLogs = document.getElementById('full-history-list');
+    
+    UI.modeDisplay = document.getElementById('current-mode-display');
+    UI.btnMode = document.getElementById('btn-mode-selector');
+    UI.engineBtn = document.getElementById('engine-toggle');
+    UI.engineLabel = document.getElementById('engine-label');
+    
+    // Modales
+    UI.modalMode = document.getElementById('mode-modal');
+    UI.modalWin = document.getElementById('victory-modal');
+    // CORRECTION MAJEURE ICI : Ajout du sélecteur manquant
+    UI.modeCards = document.querySelectorAll('.mode-card'); 
+
+    // Victory Elements
+    UI.vWord = document.getElementById('victory-word');
+    UI.vDef = document.getElementById('victory-definition');
+    UI.vAttempts = document.getElementById('v-attempts');
+    UI.vAcc = document.getElementById('v-accuracy');
+    UI.vTop3 = document.getElementById('victory-top3');
+    
+    // Stats
+    UI.sAttempts = document.getElementById('stat-attempts');
+    UI.sTop = document.getElementById('stat-top');
+    UI.sAvg = document.getElementById('stat-avg');
+}
+
+async function loadDictionary() {
+    try {
+        const response = await fetch('dictionary.json');
+        if (!response.ok) throw new Error("Fichier introuvable");
+        const json = await response.json();
+        CORE.dictionary = json;
+        console.log("Dictionnaire chargé : " + CORE.dictionary.length + " mots.");
+    } catch (e) {
+        console.warn("Erreur chargement dictionary.json, utilisation backup.", e);
+        CORE.dictionary = BACKUP_DB;
+    }
+}
+
+function normalize(str) {
+    if(!str) return "";
+    return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "").toUpperCase();
 }
 
 function calculateCurrentDay() {
@@ -170,143 +307,35 @@ function calculateCurrentDay() {
 }
 
 function getWordForDay(dayId) {
-    // Pseudo-aléatoire stable basé sur le jour
-    const keys = Object.keys(THEMATIC_DB);
-    const catIndex = (dayId * 13) % keys.length;
-    const catName = keys[catIndex];
-    const words = THEMATIC_DB[catName];
-    const wordIndex = (dayId * 7) % words.length;
-    return { word: words[wordIndex], category: catName };
+    if (CORE.dictionary.length === 0) return "ERREUR";
+    const index = (dayId * 1337 + 42) % CORE.dictionary.length;
+    return CORE.dictionary[index];
 }
 
-/* --- 5. GAME MODES --- */
-function setGameMode(mode) {
+async function setGameMode(mode) {
     CORE.mode = mode;
     saveSettings();
-
-    // Reset UI
-    UI.input.value = '';
-    UI.input.disabled = false;
-    UI.input.placeholder = "CHERCHER...";
-    UI.card.classList.add('hidden');
-    UI.miniLogs.innerHTML = '';
-    UI.fullLogs.innerHTML = '';
-    CORE.guesses = [];
-    CORE.state = 'PLAYING';
+    resetUI();
 
     if (mode === 'daily') {
-        UI.modeDisplay.textContent = `JOUR #${CORE.currentDayId}`;
-        const data = getWordForDay(CORE.currentDayId);
-        CORE.targetWord = data.word;
-        CORE.targetCategory = data.category;
-        loadGameState(`lexicore_daily_${CORE.currentDayId}`);
+        if(UI.modeDisplay) UI.modeDisplay.textContent = `JOUR #${CORE.currentDayId}`;
+        const target = getWordForDay(CORE.currentDayId);
+        await SemanticEngine.initGame(target);
+        loadGameState(`lexicore_day_${CORE.currentDayId}`);
     } 
     else if (mode === 'training') {
-        UI.modeDisplay.textContent = "ENTRAÎNEMENT";
-        // Mot aléatoire total
-        const keys = Object.keys(THEMATIC_DB);
-        const randCat = keys[Math.floor(Math.random() * keys.length)];
-        const words = THEMATIC_DB[randCat];
-        CORE.targetWord = words[Math.floor(Math.random() * words.length)];
-        CORE.targetCategory = randCat;
-        // Pas de sauvegarde en training
+        if(UI.modeDisplay) UI.modeDisplay.textContent = "ENTRAÎNEMENT";
+        const target = CORE.dictionary[Math.floor(Math.random() * CORE.dictionary.length)];
+        await SemanticEngine.initGame(target);
     }
     else if (mode.startsWith('archive_')) {
         const archId = parseInt(mode.split('_')[1]);
-        UI.modeDisplay.textContent = `ARCHIVE #${archId}`;
-        const data = getWordForDay(archId);
-        CORE.targetWord = data.word;
-        CORE.targetCategory = data.category;
+        if(UI.modeDisplay) UI.modeDisplay.textContent = `ARCHIVE #${archId}`;
         CORE.selectedArchiveId = archId;
-        // Vérifier si déjà gagné dans le progress
-        if(CORE.progress[`day_${archId}`] === 'WON') {
-             loadGameState(`lexicore_daily_${archId}`); // Charge l'état gagnant
-        } else {
-             // Charge l'état en cours ou reset
-             loadGameState(`lexicore_daily_${archId}`);
-        }
+        const target = getWordForDay(archId);
+        await SemanticEngine.initGame(target);
+        loadGameState(`lexicore_day_${archId}`);
     }
-}
-
-function buildArchiveGrid() {
-    UI.archiveGrid.innerHTML = '';
-    for (let i = 0; i <= CORE.currentDayId; i++) {
-        const btn = document.createElement('div');
-        btn.className = 'archive-day';
-        btn.textContent = i;
-        
-        if (CORE.progress[`day_${i}`] === 'WON') btn.classList.add('solved');
-        
-        btn.innerHTML += `<div class="status-dot"></div>`;
-        
-        btn.onclick = () => {
-            UI.modalMode.classList.add('hidden');
-            setGameMode(`archive_${i}`);
-        };
-        UI.archiveGrid.appendChild(btn);
-    }
-}
-
-/* --- 6. LOGIQUE SEMANTIQUE HYBRIDE --- */
-function normalize(str) {
-    return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "").toUpperCase();
-}
-
-function getLevenshteinScore(a, b) {
-    const m = a.length, n = b.length;
-    const matrix = Array.from(Array(m + 1), () => Array(n + 1).fill(0));
-    for (let i = 0; i <= m; i++) matrix[i][0] = i;
-    for (let j = 0; j <= n; j++) matrix[0][j] = j;
-    for (let i = 1; i <= m; i++) {
-        for (let j = 1; j <= n; j++) {
-            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-            matrix[i][j] = Math.min(matrix[i-1][j]+1, matrix[i][j-1]+1, matrix[i-1][j-1]+cost);
-        }
-    }
-    const dist = matrix[m][n];
-    return Math.max(0, 100 - ((dist / Math.max(m, n)) * 100));
-}
-
-function calculateScore(guess) {
-    if (guess === CORE.targetWord) return 100;
-
-    let score = 0;
-    
-    // 1. Recherche de la catégorie du mot deviné
-    let guessCat = null;
-    for (const [cat, words] of Object.entries(THEMATIC_DB)) {
-        if (words.includes(guess)) {
-            guessCat = cat;
-            break;
-        }
-    }
-
-    // 2. Logique Sémantique (Tags)
-    if (guessCat) {
-        if (guessCat === CORE.targetCategory) {
-            // Même catégorie : Score fort (70-95%)
-            // On ajoute un peu de Levenshtein pour différencier
-            score = 70 + (getLevenshteinScore(guess, CORE.targetWord) * 0.25);
-        } else {
-            // Catégorie différente : Score faible (0-30%)
-            score = getLevenshteinScore(guess, CORE.targetWord) * 0.3;
-        }
-        
-        // Bonus Liens Sémantiques (Hardcodés pour l'exemple)
-        // Ex: POIL (Corps) <-> CHAT (Animal)
-        if ( (CORE.targetCategory === 'CORPS' && guessCat === 'ANIMAL') || 
-             (CORE.targetCategory === 'ANIMAL' && guessCat === 'CORPS') ) {
-             if (['POIL', 'CHEVEU', 'GRIFFE', 'OEIL'].includes(guess) || ['POIL', 'CHEVEU'].includes(CORE.targetWord)) {
-                 score = Math.max(score, 65); // Boost sémantique fort
-             }
-        }
-    } else {
-        // Mot hors dictionnaire thématique mais dans le dico plat (structurel)
-        // Fallback orthographique pur
-        score = getLevenshteinScore(guess, CORE.targetWord) * 0.4; 
-    }
-
-    return Math.min(99.9, parseFloat(score.toFixed(2)));
 }
 
 function handleGuess(e) {
@@ -315,28 +344,22 @@ function handleGuess(e) {
 
     let word = normalize(UI.input.value);
     
-    // Check Dico
-    if (!FLAT_DICTIONARY.includes(word) && !Object.values(THEMATIC_DB).flat().includes(word)) {
-        // Tolérance pluriel simple
-        if(word.endsWith('S')) {
-            let sing = word.slice(0, -1);
-            if(FLAT_DICTIONARY.includes(sing)) word = sing;
-            else { triggerShake(); UI.ambience.textContent = "INCONNU"; return; }
-        } else {
-            triggerShake(); UI.ambience.textContent = "INCONNU"; return; 
-        }
-    }
-
+    if (word.length < 2) { triggerShake(); return; }
+    
     if (CORE.guesses.some(g => g.word === word)) {
-        triggerShake(); UI.ambience.textContent = "DÉJÀ FAIT"; return;
+        triggerShake(); 
+        UI.ambience.textContent = "DÉJÀ FAIT"; 
+        return;
     }
 
-    const score = calculateScore(word);
+    const score = SemanticEngine.calculateScore(word);
     const turnData = { word, temp: score, id: CORE.guesses.length + 1 };
     CORE.guesses.push(turnData);
 
     renderFeedback(turnData);
-    addLogUI(turnData);
+    updateHistoryUI(); 
+    updateStatsUI();
+    
     UI.input.value = '';
     closeAutocomplete();
 
@@ -344,79 +367,56 @@ function handleGuess(e) {
         CORE.state = 'WON';
         handleVictory();
     } else {
-        AUDIO.play('valid');
-        HAPTICS.trigger('medium');
+        const type = score > 50 ? 'valid' : 'error'; 
+        AUDIO.play(score > 50 ? 'valid' : 'ui');
+        HAPTICS.trigger(score > 50 ? 'medium' : 'soft');
     }
     
     saveGameState();
 }
 
-function handleVictory() {
-    AUDIO.play('win');
-    HAPTICS.trigger('success');
-    UI.winWord.textContent = CORE.targetWord;
-    UI.modalWin.classList.remove('hidden');
-    UI.ambience.textContent = "SÉQUENCE COMPLÈTE";
-
-    // Sauvegarde Victoire
-    if (CORE.mode === 'daily') {
-        CORE.progress[`day_${CORE.currentDayId}`] = 'WON';
-    } else if (CORE.mode.startsWith('archive_')) {
-        CORE.progress[`day_${CORE.selectedArchiveId}`] = 'WON';
-    }
-    localStorage.setItem('lexicore_progress', JSON.stringify(CORE.progress));
+function resetUI() {
+    UI.input.value = '';
+    UI.input.disabled = false;
+    UI.input.placeholder = "CHERCHER...";
+    UI.card.classList.add('hidden');
+    UI.miniLogs.innerHTML = '';
+    UI.fullLogs.innerHTML = '<li class="empty-state">Aucune donnée</li>';
+    CORE.guesses = [];
+    CORE.state = 'PLAYING';
     updateStatsUI();
 }
 
-/* --- 7. PERSISTENCE --- */
-function saveGameState() {
-    if (CORE.mode === 'training') return;
-    let key = CORE.mode === 'daily' ? `lexicore_daily_${CORE.currentDayId}` : `lexicore_daily_${CORE.selectedArchiveId}`;
-    const data = { guesses: CORE.guesses, state: CORE.state, target: CORE.targetWord };
-    localStorage.setItem(key, JSON.stringify(data));
-}
-
-function loadGameState(key) {
-    const saved = localStorage.getItem(key);
-    if (saved) {
-        const data = JSON.parse(saved);
-        if(data.target === CORE.targetWord) { // Sécurité intégrité
-            CORE.guesses = data.guesses;
-            CORE.state = data.state;
-            restoreUI();
-            return;
-        }
-    }
-}
-
-function restoreUI() {
-    CORE.guesses.forEach(g => addLogUI(g));
-    if (CORE.guesses.length > 0) renderFeedback(CORE.guesses[CORE.guesses.length - 1]);
-    if (CORE.state === 'WON') {
-        UI.input.disabled = true; 
-        UI.input.placeholder = "TROUVÉ";
-        UI.ambience.textContent = "SYSTÈME DÉVERROUILLÉ";
-    }
-}
-
-function saveSettings() {
-    CORE.settings.mode = CORE.mode;
-    localStorage.setItem('lexicore_settings', JSON.stringify(CORE.settings));
-}
-function loadSettings() {
-    const s = localStorage.getItem('lexicore_settings');
-    if (s) CORE.settings = {...CORE.settings, ...JSON.parse(s)};
+function updateHistoryUI() {
+    const sorted = [...CORE.guesses].sort((a, b) => b.temp - a.temp);
     
-    const p = localStorage.getItem('lexicore_progress');
-    if (p) CORE.progress = JSON.parse(p);
+    UI.fullLogs.innerHTML = '';
+    sorted.forEach(g => {
+        const style = getTempStyle(g.temp);
+        const li = document.createElement('li');
+        li.className = 'log-item';
+        li.style.borderLeftColor = style.color;
+        li.innerHTML = `<span>${g.word}</span><span style="font-weight:bold; color:${style.color}">${g.temp === 100 ? 'VICTOIRE' : g.temp.toFixed(2)+'%'}</span>`;
+        UI.fullLogs.appendChild(li);
+    });
+
+    UI.miniLogs.innerHTML = '';
+    const recent = CORE.guesses.slice(-3).reverse();
+    recent.forEach(g => {
+        const style = getTempStyle(g.temp);
+        const li = document.createElement('div');
+        li.className = 'log-item';
+        li.innerHTML = `<span style="color:${style.color}">●</span> ${g.word} <small style="margin-left:auto">${g.temp.toFixed(1)}%</small>`;
+        UI.miniLogs.appendChild(li);
+    });
 }
 
-/* --- 8. UI HELPERS --- */
 function getTempStyle(temp) {
     if (temp === 100) return { color: 'var(--temp-win)', icon: '💎' };
-    if (temp >= 75) return { color: 'var(--temp-hot)', icon: '🔥' }; // Sémantiquement proche (Même catégorie)
-    if (temp >= 50) return { color: 'var(--temp-warm)', icon: '☀️' }; // Lien partiel
-    if (temp >= 25) return { color: 'var(--temp-neutral)', icon: '☁️' };
+    if (temp >= 90) return { color: 'var(--temp-hot)', icon: '🔥' };
+    if (temp >= 70) return { color: 'var(--temp-warm)', icon: '☀️' };
+    if (temp >= 40) return { color: 'var(--temp-neutral)', icon: '☁️' };
+    if (temp >= 20) return { color: 'var(--temp-cold)', icon: '💧' };
     return { color: 'var(--temp-glacial)', icon: '🧊' };
 }
 
@@ -425,151 +425,289 @@ function renderFeedback(data) {
     const style = getTempStyle(data.temp);
     
     UI.fWord.textContent = data.word;
-    UI.fTemp.textContent = data.temp === 100 ? "100%" : data.temp.toFixed(1) + "%";
+    UI.fTemp.textContent = data.temp === 100 ? "100%" : data.temp.toFixed(2) + "%";
     UI.fBar.style.width = data.temp + "%";
     UI.fBar.style.backgroundColor = style.color;
     UI.fIcon.textContent = style.icon;
     UI.card.style.borderColor = style.color;
     UI.fTemp.style.color = style.color;
 
-    // Messages contextuels sémantiques
-    if (data.temp === 100) UI.ambience.textContent = "CORRESPONDANCE EXACTE";
-    else if (data.temp >= 75) UI.ambience.textContent = "THÈME IDENTIFIÉ !";
-    else if (data.temp >= 50) UI.ambience.textContent = "PISTE SÉMANTIQUE...";
-    else UI.ambience.textContent = "HORS SUJET";
-}
-
-function addLogUI(data) {
-    const style = getTempStyle(data.temp);
+    let msg = "INCONNU";
+    if (data.temp === 100) msg = "IDENTIFIÉ";
+    else if (data.temp >= 90) msg = "BRÛLANT !";
+    else if (data.temp >= 70) msg = "TRÈS PROCHE";
+    else if (data.temp >= 40) msg = "SUR LA VOIE";
+    else if (data.temp >= 20) msg = "UN PEU FROID";
+    else msg = "GELÉ";
     
-    // Full
-    const li = document.createElement('li');
-    li.className = 'log-item';
-    li.style.borderLeftColor = style.color;
-    li.innerHTML = `<span>${data.word}</span><span style="font-weight:bold; color:${style.color}">${data.temp === 100 ? 'MAX' : Math.floor(data.temp)+'%'}</span>`;
-    UI.fullLogs.prepend(li);
-
-    // Mini
-    const miniLi = document.createElement('li');
-    miniLi.className = 'log-item';
-    miniLi.innerHTML = `<span style="color:${style.color}">●</span> ${data.word}`;
-    UI.miniLogs.prepend(miniLi);
-    if (UI.miniLogs.children.length > 3) UI.miniLogs.lastChild.remove();
-}
-
-function triggerShake() {
-    UI.form.classList.remove('shake');
-    void UI.form.offsetWidth;
-    UI.form.classList.add('shake');
-    AUDIO.play('error');
-    HAPTICS.trigger('error');
+    UI.ambience.textContent = msg;
 }
 
 function updateStatsUI() {
-    // Calcul stats simples
-    const wins = Object.values(CORE.progress).filter(v => v === 'WON').length;
-    UI.sWins.textContent = wins;
     UI.sAttempts.textContent = CORE.guesses.length;
+    const max = CORE.guesses.reduce((acc, g) => Math.max(acc, g.temp), 0);
+    UI.sTop.textContent = max.toFixed(1) + "%";
+    const avg = CORE.guesses.length ? (CORE.guesses.reduce((acc,g) => acc + g.temp, 0) / CORE.guesses.length) : 0;
+    UI.sAvg.textContent = avg.toFixed(1) + "%";
 }
 
-/* --- 9. EVENT LISTENERS --- */
+async function handleVictory() {
+    AUDIO.play('win');
+    HAPTICS.trigger('success');
+    
+    UI.vWord.textContent = CORE.targetWord;
+    UI.vAttempts.textContent = CORE.guesses.length;
+    const avg = CORE.guesses.reduce((acc,g) => acc + g.temp, 0) / CORE.guesses.length;
+    UI.vAcc.textContent = avg.toFixed(1) + "%";
+    
+    UI.modalWin.classList.remove('hidden');
+
+    // Sauvegarde Progression
+    if (CORE.mode === 'daily') {
+        CORE.progress[`day_${CORE.currentDayId}`] = { status: 'WON', moves: CORE.guesses.length };
+        localStorage.setItem('lexicore_progress', JSON.stringify(CORE.progress));
+    } else if (CORE.mode.startsWith('archive_')) {
+        CORE.progress[`day_${CORE.selectedArchiveId}`] = { status: 'WON', moves: CORE.guesses.length };
+        localStorage.setItem('lexicore_progress', JSON.stringify(CORE.progress));
+    }
+
+    // Load Definition
+    UI.vDef.textContent = "Chargement définition...";
+    try {
+        const res = await fetch(CONFIG.API_DEF + CORE.targetWord.toLowerCase());
+        const data = await res.json();
+        if(data && data[0] && data[0].meanings && data[0].meanings[0]) {
+            const def = data[0].meanings[0].definitions[0].definition;
+            UI.vDef.textContent = `"${def}"`;
+        } else {
+            UI.vDef.textContent = "Définition indisponible.";
+        }
+    } catch {
+        UI.vDef.textContent = "Définition indisponible (Hors ligne).";
+    }
+
+    // Top 3
+    UI.vTop3.innerHTML = '';
+    let topWords = [];
+    if (CORE.semanticMap.size > 0) {
+        topWords = Array.from(CORE.semanticMap.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(1, 4)
+            .map(e => ({ word: e[0], score: e[1] }));
+    } else {
+        topWords = [{word: "?", score: 0}];
+    }
+    
+    topWords.forEach(w => {
+        UI.vTop3.innerHTML += `<div class="top3-item"><span>${w.word}</span><span>${w.score.toFixed(1)}%</span></div>`;
+    });
+}
+
+// --- UTILITAIRES ---
+function saveGameState() {
+    if (CORE.mode === 'training') return;
+    let key = CORE.mode === 'daily' ? `lexicore_day_${CORE.currentDayId}` : `lexicore_day_${CORE.selectedArchiveId}`;
+    const data = { guesses: CORE.guesses, state: CORE.state, target: CORE.targetWord };
+    localStorage.setItem(key, JSON.stringify(data));
+}
+
+function loadGameState(key) {
+    const saved = localStorage.getItem(key);
+    if (saved) {
+        const data = JSON.parse(saved);
+        if(data.target === CORE.targetWord) {
+            CORE.guesses = data.guesses;
+            CORE.state = data.state;
+            updateHistoryUI();
+            updateStatsUI();
+            if(CORE.guesses.length) renderFeedback(CORE.guesses[CORE.guesses.length-1]);
+            
+            if (CORE.state === 'WON') {
+                UI.input.disabled = true; 
+                UI.input.placeholder = "TROUVÉ";
+                UI.ambience.textContent = "SYSTÈME DÉVERROUILLÉ";
+            }
+        }
+    }
+}
+
+function saveSettings() {
+    localStorage.setItem('lexicore_settings', JSON.stringify(CORE.settings));
+}
+function loadSettings() {
+    const s = localStorage.getItem('lexicore_settings');
+    if (s) {
+        const parsed = JSON.parse(s);
+        CORE.settings = { ...CORE.settings, ...parsed };
+    }
+    const p = localStorage.getItem('lexicore_progress');
+    if (p) CORE.progress = JSON.parse(p);
+}
+
+// --- AUDIO & HAPTICS ---
+const AUDIO = {
+    ctx: null,
+    init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+    play(type) {
+        if (!CORE.settings.audio || !this.ctx) return;
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        
+        if (type === 'valid') {
+            osc.frequency.setValueAtTime(400, t); osc.frequency.linearRampToValueAtTime(600, t+0.1);
+            gain.gain.setValueAtTime(0.05, t); gain.gain.linearRampToValueAtTime(0, t+0.1);
+            osc.start(t); osc.stop(t+0.1);
+        } else if (type === 'win') {
+            osc.frequency.setValueAtTime(400, t); osc.frequency.setValueAtTime(600, t+0.1); osc.frequency.setValueAtTime(800, t+0.3);
+            gain.gain.setValueAtTime(0.1, t); gain.gain.linearRampToValueAtTime(0, t+1);
+            osc.start(t); osc.stop(t+1);
+        } else {
+            osc.frequency.setValueAtTime(800, t); osc.frequency.exponentialRampToValueAtTime(100, t+0.05);
+            gain.gain.setValueAtTime(0.02, t); gain.gain.linearRampToValueAtTime(0, t+0.05);
+            osc.start(t); osc.stop(t+0.05);
+        }
+    }
+};
+
+const HAPTICS = {
+    trigger(type) {
+        if (!CORE.settings.haptic || !navigator.vibrate) return;
+        if(type === 'soft') navigator.vibrate(10);
+        if(type === 'medium') navigator.vibrate(30);
+        if(type === 'success') navigator.vibrate([50, 50, 100]);
+    }
+};
+
+// --- EVENT LISTENERS ---
 function setupEventListeners() {
     // Nav
     UI.navBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            HAPTICS.trigger('soft');
             UI.navBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             UI.views.forEach(v => v.classList.remove('active'));
-            document.getElementById(btn.dataset.target).classList.add('active');
+            const targetEl = document.getElementById(btn.dataset.target);
+            if(targetEl) targetEl.classList.add('active');
         });
     });
+
+    // Engine Toggle
+    if(UI.engineBtn) {
+        UI.engineBtn.addEventListener('click', () => {
+            CORE.currentEngine = CORE.currentEngine === 'semantic' ? 'ortho' : 'semantic';
+            if(UI.engineLabel) UI.engineLabel.textContent = CORE.currentEngine === 'semantic' ? 'SÉMANTIQUE' : 'MORPHOLOGIQUE';
+            UI.engineBtn.classList.toggle('mode-ortho', CORE.currentEngine === 'ortho');
+            HAPTICS.trigger('soft');
+        });
+    }
 
     // Form
-    UI.form.addEventListener('submit', handleGuess);
-    UI.input.addEventListener('input', (e) => {
-        const val = normalize(e.target.value);
-        UI.autoList.innerHTML = '';
-        UI.autoList.classList.add('hidden');
-        if (val.length < 2) return;
-        
-        const matches = FLAT_DICTIONARY.filter(w => w.startsWith(val)).slice(0, 4);
-        if (matches.length > 0) {
-            UI.autoList.classList.remove('hidden');
-            matches.forEach(m => {
-                const div = document.createElement('div');
-                div.className = 'autocomplete-item';
-                div.innerHTML = `<strong>${val}</strong>${m.substring(val.length)}`;
-                div.onclick = () => { UI.input.value = m; closeAutocomplete(); UI.input.focus(); };
-                UI.autoList.appendChild(div);
-            });
-        }
-    });
+    if(UI.form) UI.form.addEventListener('submit', handleGuess);
     
-    function closeAutocomplete() { UI.autoList.classList.add('hidden'); }
-
-    // Modes & Modal
-    UI.btnMode.addEventListener('click', () => {
-        buildArchiveGrid();
-        UI.modalMode.classList.remove('hidden');
-    });
-    UI.closeMode.addEventListener('click', () => UI.modalMode.classList.add('hidden'));
-    
-    UI.modeCards.forEach(card => {
-        card.addEventListener('click', () => {
-            UI.modalMode.classList.add('hidden');
-            setGameMode(card.dataset.mode);
+    // Autocomplete
+    if(UI.input) {
+        UI.input.addEventListener('input', (e) => {
+            const val = normalize(e.target.value);
+            UI.autoList.innerHTML = '';
+            UI.autoList.classList.add('hidden');
+            if (val.length < 2) return;
+            
+            // Recherche dans le dictionnaire chargé
+            const matches = CORE.dictionary.filter(w => w.startsWith(val)).slice(0, 4);
+            if (matches.length > 0) {
+                UI.autoList.classList.remove('hidden');
+                matches.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.innerHTML = `<strong>${val}</strong>${m.substring(val.length)}`;
+                    div.onclick = () => { UI.input.value = m; closeAutocomplete(); UI.input.focus(); };
+                    UI.autoList.appendChild(div);
+                });
+            }
         });
-    });
+    }
+    
+    function closeAutocomplete() { if(UI.autoList) UI.autoList.classList.add('hidden'); }
 
-    UI.closeWin.addEventListener('click', () => UI.modalWin.classList.add('hidden'));
+    // Modals
+    if(UI.btnMode) {
+        UI.btnMode.addEventListener('click', () => {
+            buildArchiveGrid();
+            if(UI.modalMode) UI.modalMode.classList.remove('hidden');
+        });
+    }
+
+    const closeModeBtn = document.getElementById('close-mode-modal');
+    if(closeModeBtn) closeModeBtn.addEventListener('click', () => UI.modalMode.classList.add('hidden'));
+    
+    const closeWinBtn = document.getElementById('close-victory');
+    if(closeWinBtn) closeWinBtn.addEventListener('click', () => UI.modalWin.classList.add('hidden'));
+
+    // Fix pour les boutons "Mode" (Quotidien / Entrainement)
+    if(UI.modeCards) {
+        UI.modeCards.forEach(c => c.addEventListener('click', () => {
+            if(UI.modalMode) UI.modalMode.classList.add('hidden');
+            setGameMode(c.dataset.mode);
+        }));
+    }
 
     // Settings
-    document.getElementById('setting-audio').addEventListener('change', e => { CORE.settings.audio = e.target.checked; saveSettings(); });
-    document.getElementById('setting-haptic').addEventListener('change', e => { CORE.settings.haptic = e.target.checked; saveSettings(); if(e.target.checked) HAPTICS.trigger('medium'); });
-    document.getElementById('setting-anim').addEventListener('change', e => { CORE.settings.anim = e.target.checked; applySettings(); saveSettings(); });
-
+    const setAudio = document.getElementById('setting-audio');
+    if(setAudio) setAudio.addEventListener('change', e => { CORE.settings.audio = e.target.checked; saveSettings(); });
+    
+    const setHaptic = document.getElementById('setting-haptic');
+    if(setHaptic) setHaptic.addEventListener('change', e => { CORE.settings.haptic = e.target.checked; saveSettings(); });
+    
+    const setAnim = document.getElementById('setting-anim');
+    if(setAnim) setAnim.addEventListener('change', e => { 
+        CORE.settings.anim = e.target.checked; 
+        saveSettings(); 
+        document.body.classList.toggle('no-anim', !e.target.checked); 
+    });
+    
     document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             CORE.settings.theme = btn.dataset.theme;
-            applySettings(); saveSettings();
+            applyThemeClass(); saveSettings();
         });
     });
 
-    // HARD RESET & UPDATE
-    UI.btnForceUpdate.addEventListener('click', async () => {
-        if(!confirm("Forcer la mise à jour et recharger ?")) return;
-        if ('serviceWorker' in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            for (let registration of registrations) { await registration.unregister(); }
-        }
-        if ('caches' in window) {
-            const keys = await caches.keys();
-            for (let key of keys) { await caches.delete(key); }
-        }
-        window.location.reload(true);
-    });
-
-    UI.btnReset.addEventListener('click', () => {
-        if(confirm("ATTENTION : Efface tout l'historique et les victoires. Confirmer ?")) {
-            localStorage.clear();
-            window.location.reload();
-        }
+    const resetBtn = document.getElementById('btn-reset');
+    if(resetBtn) resetBtn.addEventListener('click', () => {
+        if(confirm("Tout effacer ?")) { localStorage.clear(); location.reload(); }
     });
 }
 
-function applySettings() {
-    document.getElementById('setting-audio').checked = CORE.settings.audio;
-    document.getElementById('setting-haptic').checked = CORE.settings.haptic;
-    document.getElementById('setting-anim').checked = CORE.settings.anim;
-    
-    document.body.classList.toggle('no-anim', !CORE.settings.anim);
-    
+function buildArchiveGrid() {
+    const grid = document.getElementById('archive-grid');
+    if(!grid) return;
+    grid.innerHTML = '';
+    for (let i = 0; i <= CORE.currentDayId; i++) {
+        const div = document.createElement('div');
+        div.className = 'archive-day';
+        if (CORE.progress[`day_${i}`]?.status === 'WON') div.classList.add('solved');
+        div.innerHTML = `${i}<div class="status-dot"></div>`;
+        div.onclick = () => { if(UI.modalMode) UI.modalMode.classList.add('hidden'); setGameMode(`archive_${i}`); };
+        grid.appendChild(div);
+    }
+}
+
+function applyThemeClass() {
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === CORE.settings.theme));
     document.body.classList.remove('light-theme');
     if (CORE.settings.theme === 'light') document.body.classList.add('light-theme');
     else if (CORE.settings.theme === 'auto' && window.matchMedia('(prefers-color-scheme: light)').matches) document.body.classList.add('light-theme');
 }
 
-// Start
-window.addEventListener('load', init);
+function triggerShake() {
+    if(UI.form) {
+        UI.form.classList.remove('shake');
+        void UI.form.offsetWidth;
+        UI.form.classList.add('shake');
+    }
+    AUDIO.play('ui');
+    HAPTICS.trigger('soft');
+}
