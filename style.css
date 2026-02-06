@@ -222,8 +222,10 @@ input::placeholder { opacity: 0.3; font-size: 1rem; font-weight: 400; }
 .modal-content { 
     position: relative; width: 90%; max-width: 350px; text-align: center; 
     transform: translateY(20px); transition: transform 0.3s; z-index: 2001;
+    max-height: 85vh; overflow-y: auto;
 }
 .modal:not(.hidden) .modal-content { transform: translateY(0); }
+.modal-divider { border: 0; height: 1px; background: var(--glass-border); margin: 20px 0; }
 
 .mode-options { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
 .mode-card {
@@ -235,8 +237,25 @@ input::placeholder { opacity: 0.3; font-size: 1rem; font-weight: 400; }
 .mode-title { display: block; font-weight: 700; font-size: 0.9rem; color: var(--accent); margin-bottom: 4px; }
 .mode-desc { display: block; font-size: 0.75rem; color: var(--text-secondary); }
 
+/* --- ARCHIVE GRID --- */
+.archive-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;
+}
+.archive-day {
+    aspect-ratio: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+    border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; position: relative; font-size: 0.8rem; font-weight: 700;
+}
+.archive-day.future { opacity: 0.3; pointer-events: none; }
+.archive-day.solved { border-color: var(--success); color: var(--success); background: rgba(46, 213, 115, 0.1); }
+.archive-day.failed { border-color: var(--danger); color: var(--danger); }
+.archive-day .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--glass-border); margin-top: 4px; }
+.archive-day.solved .status-dot { background: var(--success); }
+.archive-day.failed .status-dot { background: var(--danger); }
+
 .text-btn { background: none; border: none; color: var(--text-secondary); text-decoration: underline; cursor: pointer; padding: 10px; }
 .action-btn.primary { background: var(--accent); color: white; width: 100%; padding: 15px; border-radius: 12px; font-weight: 700; border: none; cursor: pointer; }
+.small-action-btn { background: rgba(255,255,255,0.1); color: var(--text-primary); border: 1px solid var(--glass-border); padding: 5px 12px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
 
 /* --- AUTOCOMPLETE --- */
 .autocomplete-items {

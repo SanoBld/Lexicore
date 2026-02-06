@@ -1,34 +1,22 @@
-const CACHE_NAME = 'lexicore-v2-final';
+const CACHE_NAME = 'lexicore-v5-semantix';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './script.js',
   './manifest.json',
-  './dictionary.json',
-  'https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&display=swap'
+  'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap'
 ];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
+  self.skipWaiting();
 });
 
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request).then((res) => {
-      // Stratégie : Cache First
-      if (res) return res;
-      
-      // Network Fallback + Cache des polices Google
-      return fetch(e.request).then(response => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-            // Mise en cache spécifique des Fonts si besoin
-            if (e.request.url.includes('fonts.gstatic.com')) {
-                const clone = response.clone();
-                caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-            }
-            return response;
-        }
+      return res || fetch(e.request).then(response => {
         return response;
       });
     })
@@ -45,4 +33,5 @@ self.addEventListener('activate', (e) => {
       );
     })
   );
+  self.clients.claim();
 });

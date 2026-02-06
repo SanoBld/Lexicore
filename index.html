@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>LEXICORE | Système Sémantique</title>
+    <title>LEXICORE | Sémantique Avancée</title>
     <meta name="theme-color" content="#050508">
-    <meta name="description" content="Jeu de déduction sémantique et logique.">
+    <meta name="description" content="Jeu de déduction sémantique par thèmes.">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -33,7 +33,7 @@
             <div class="game-interface">
                 <div id="feedback-card" class="glass-panel feedback-panel hidden">
                     <div class="card-top">
-                        <span class="label">ANALYSE EN COURS</span>
+                        <span class="label">PROXIMITÉ SÉMANTIQUE</span>
                         <span class="temp-icon" id="temp-icon">❄️</span>
                     </div>
                     <div class="word-display">
@@ -53,7 +53,7 @@
                 </div>
 
                 <form id="guess-form" class="input-group glass-panel">
-                    <input type="text" id="guess-input" placeholder="SÉQUENCE..." autocomplete="off" spellcheck="false" enterkeyhint="go">
+                    <input type="text" id="guess-input" placeholder="MOT..." autocomplete="off" spellcheck="false" enterkeyhint="go">
                     <button type="submit" id="submit-btn" aria-label="Valider">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
@@ -67,7 +67,7 @@
         <section id="view-logs" class="view">
             <header class="view-header">
                 <h2>DONNÉES</h2>
-                <span class="version-tag">DB-LOCALE</span>
+                <span class="version-tag">LOCALE</span>
             </header>
             
             <div class="stats-grid">
@@ -86,7 +86,7 @@
             </div>
 
             <div class="history-container">
-                <h3 class="section-subtitle">HISTORIQUE SÉQUENCE</h3>
+                <h3 class="section-subtitle">HISTORIQUE PARTIE</h3>
                 <ul id="full-history-list" class="log-list">
                     <li class="empty-state">Aucune donnée disponible</li>
                 </ul>
@@ -96,14 +96,22 @@
         <section id="view-system" class="view">
             <header class="view-header">
                 <h2>SYSTÈME</h2>
-                <span class="version-tag">V4.0</span>
+                <span class="version-tag">V5.0-SEMANTIX</span>
             </header>
             
             <div class="settings-list glass-panel">
                 <div class="setting-item">
                     <div class="setting-info">
+                        <span class="setting-name">Mise à Jour Force</span>
+                        <small>Vider cache & recharger</small>
+                    </div>
+                    <button id="btn-force-update" class="small-action-btn">UPDATE</button>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
                         <span class="setting-name">Synthèse Audio</span>
-                        <small>Sons générés procéduralement</small>
+                        <small>Sons procéduraux</small>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="setting-audio">
@@ -125,7 +133,7 @@
                 <div class="setting-item">
                     <div class="setting-info">
                         <span class="setting-name">Effets Visuels</span>
-                        <small>Nebula & Particules (Gourmand)</small>
+                        <small>Nebula & Particules</small>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="setting-anim">
@@ -143,13 +151,13 @@
                 </div>
 
                 <div class="setting-actions">
-                    <button id="btn-reset" class="danger-btn">PURGER LE SYSTÈME (RESET)</button>
+                    <button id="btn-reset" class="danger-btn">RÉINITIALISER TOUTES LES DONNÉES</button>
                 </div>
             </div>
             
             <div class="credits">
-                <p>LEXICORE V4.0</p>
-                <p class="status-dot">Sano Bld</p>
+                <p>LEXICORE V5.0 | MOTEUR SÉMANTIQUE</p>
+                <p class="status-dot">● SYSTÈME PRÊT</p>
             </div>
         </section>
     </main>
@@ -182,23 +190,27 @@
     </div>
 
     <div id="mode-modal" class="modal hidden">
-        <div class="modal-content glass-panel">
-            <h2>SÉLECTEUR DE MODE</h2>
+        <div class="modal-content glass-panel extended-modal">
+            <h2>SÉLECTION DU MODE</h2>
+            
             <div class="mode-options">
                 <button class="mode-card" data-mode="daily">
                     <span class="mode-title">QUOTIDIEN (Daily)</span>
-                    <span class="mode-desc">Un mot unique par jour. Le classement officiel.</span>
-                </button>
-                <button class="mode-card" data-mode="archive">
-                    <span class="mode-title">ARCHIVES</span>
-                    <span class="mode-desc">Rejouer des anciennes séquences au hasard.</span>
+                    <span class="mode-desc">Le mot officiel du jour.</span>
                 </button>
                 <button class="mode-card" data-mode="training">
                     <span class="mode-title">ENTRAÎNEMENT</span>
-                    <span class="mode-desc">Mots infinis. Pas de stats. Juste la pratique.</span>
+                    <span class="mode-desc">Infini. Juste pour pratiquer.</span>
                 </button>
             </div>
-            <button id="close-mode-modal" class="text-btn">ANNULER</button>
+
+            <hr class="modal-divider">
+
+            <h3>ARCHIVES TEMPORELLES</h3>
+            <div class="archive-grid" id="archive-grid">
+                </div>
+
+            <button id="close-mode-modal" class="text-btn">FERMER</button>
         </div>
         <div class="modal-backdrop"></div>
     </div>
