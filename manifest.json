@@ -1,35 +1,74 @@
 {
-  "name": "LEXICORE : Mot du Jour",
+  "name": "Lexicore - Jeu Sémantique Quotidien",
   "short_name": "Lexicore",
-  "description": "Décodez la séquence sémantique du jour. Jeu de déduction quotidien.",
+  "description": "Jeu de déduction sémantique quotidien avec design Material You. Trouvez le mot du jour !",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#050508",
-  "theme_color": "#6c5ce7",
-  "categories": ["games", "education"],
+  "background_color": "#FFFBFE",
+  "theme_color": "#6750A4",
+  "categories": ["games", "education", "entertainment"],
   "lang": "fr-FR",
+  "dir": "ltr",
+  "scope": "./",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3233/3233497.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/3233/3233497.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
   "screenshots": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3233/3233497.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Interface mobile de Lexicore"
+      "label": "Interface de jeu Lexicore"
+    }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded"
+  },
+  "shortcuts": [
+    {
+      "name": "Jouer aujourd'hui",
+      "short_name": "Jouer",
+      "description": "Lancer une partie quotidienne",
+      "url": "./?mode=daily",
+      "icons": [
+        {
+          "src": "icon-512.png",
+          "sizes": "512x512"
+        }
+      ]
+    },
+    {
+      "name": "Entraînement",
+      "short_name": "Entraînement",
+      "description": "Mode pratique illimité",
+      "url": "./?mode=training",
+      "icons": [
+        {
+          "src": "icon-512.png",
+          "sizes": "512x512"
+        }
+      ]
+    },
+    {
+      "name": "Statistiques",
+      "short_name": "Stats",
+      "description": "Voir mes statistiques",
+      "url": "./?view=stats",
+      "icons": [
+        {
+          "src": "icon-512.png",
+          "sizes": "512x512"
+        }
+      ]
     }
   ]
 }

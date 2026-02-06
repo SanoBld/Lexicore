@@ -3,260 +3,506 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>LEXICORE | Sémantique Avancée</title>
-    <meta name="theme-color" content="#050508">
-    <meta name="description" content="Jeu de déduction sémantique et morphologique.">
+    <title>Lexicore - Jeu Sémantique</title>
+    <meta name="theme-color" content="#6750A4">
+    <meta name="description" content="Jeu de déduction sémantique quotidien avec Material You">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
 </head>
 <body>
-
-    <div id="nebula-layer" class="nebula-container">
-        <div class="nebula-glow"></div>
-    </div>
-    <div class="noise-texture"></div>
-
-    <main class="app-container">
+    
+    <!-- Container principal -->
+    <div class="app-container">
         
-        <section id="view-terminal" class="view active">
-            <header class="view-header compact-header">
-                <div class="brand-wrapper">
-                    <div class="brand">LEXI<span class="brand-accent">CORE</span></div>
-                    <div class="mode-badge" id="current-mode-display">DAILY</div>
-                </div>
-                <div class="header-controls">
-                    <button id="engine-toggle" class="engine-btn" aria-label="Changer de moteur">
-                        <span id="engine-label">SÉMANTIQUE</span>
-                        <div class="engine-dot"></div>
-                    </button>
-                    
-                    <button id="btn-mode-selector" class="icon-btn" aria-label="Changer de mode">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
-                    </button>
-                </div>
-            </header>
-
-            <div class="game-interface">
-                <div id="feedback-card" class="glass-panel feedback-panel hidden">
-                    <div class="card-top">
-                        <span class="label" id="feedback-label">PROXIMITÉ SÉMANTIQUE</span>
-                        <span class="temp-icon" id="temp-icon">❄️</span>
-                    </div>
-                    <div class="word-display">
-                        <span id="feedback-word">---</span>
-                    </div>
-                    
-                    <div class="temp-wrapper">
-                        <div class="temp-bar-track">
-                            <div class="temp-bar-fill" id="temp-bar"></div>
+        <!-- Vue Jeu -->
+        <section id="view-game" class="view active">
+            <div class="top-app-bar">
+                <div class="app-bar-content">
+                    <div class="brand-section">
+                        <h1 class="app-title">Lexicore</h1>
+                        <div class="mode-indicator" id="mode-indicator">
+                            <span class="mode-icon">🎯</span>
+                            <span class="mode-text" id="mode-text">Quotidien</span>
                         </div>
                     </div>
-                    
-                    <div class="feedback-footer">
-                        <div class="temp-value" id="feedback-temp">0.00%</div>
-                        <div id="ambience-display" class="ambience-text">ATTENTE SIGNAL...</div>
+                    <div class="app-bar-actions">
+                        <button class="icon-button" id="btn-engine-toggle" aria-label="Changer de moteur">
+                            <span class="material-symbols-outlined">psychology</span>
+                            <span class="button-ripple"></span>
+                        </button>
+                        <button class="icon-button" id="btn-mode-selector" aria-label="Sélectionner un mode">
+                            <span class="material-symbols-outlined">calendar_today</span>
+                            <span class="button-ripple"></span>
+                        </button>
                     </div>
                 </div>
-
-                <form id="guess-form" class="input-group glass-panel">
-                    <input type="text" id="guess-input" placeholder="MOT..." autocomplete="off" spellcheck="false" enterkeyhint="go">
-                    <button type="submit" id="submit-btn" aria-label="Valider">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
-                    <div id="autocomplete-list" class="autocomplete-items hidden"></div>
-                </form>
-                
-                <div class="status-indicator">
-                    <span id="network-status" class="status-pill online">ONLINE API</span>
-                </div>
-
-                <div id="mini-logs" class="mini-logs-list">
-                    </div>
-            </div>
-        </section>
-
-        <section id="view-logs" class="view">
-            <header class="view-header">
-                <h2>DONNÉES</h2>
-                <span class="version-tag">TRIÉ PAR SCORE</span>
-            </header>
-            
-            <div class="stats-grid">
-                <div class="stat-box glass-panel">
-                    <span class="stat-label">ESSAIS</span>
-                    <span class="stat-value" id="stat-attempts">0</span>
-                </div>
-                <div class="stat-box glass-panel">
-                    <span class="stat-label">TOP SCORE</span>
-                    <span class="stat-value" id="stat-top">0%</span>
-                </div>
-                <div class="stat-box glass-panel">
-                    <span class="stat-label">MOYENNE</span>
-                    <span class="stat-value" id="stat-avg">0%</span>
-                </div>
             </div>
 
-            <div class="history-container">
-                <h3 class="section-subtitle">HISTORIQUE PARTIE</h3>
-                <ul id="full-history-list" class="log-list smart-list">
-                    <li class="empty-state">Aucune donnée disponible</li>
-                </ul>
-            </div>
-        </section>
-
-        <section id="view-system" class="view">
-            <header class="view-header">
-                <h2>SYSTÈME</h2>
-                <span class="version-tag">V6.1-HYBRID</span>
-            </header>
-            
-            <div class="settings-list glass-panel">
-                
-                <div class="setting-group-vertical">
-                    <span class="setting-name">Personnalisation Interface</span>
-                    <div class="color-picker-grid">
-                        <div class="color-control">
-                            <label>Accent</label>
-                            <input type="color" id="color-accent" value="#6c5ce7">
+            <div class="game-content">
+                <!-- Carte de feedback -->
+                <div class="feedback-card hidden" id="feedback-card">
+                    <div class="card-header">
+                        <div class="feedback-label">
+                            <span class="label-text" id="feedback-label">Proximité sémantique</span>
+                            <span class="engine-badge" id="engine-badge">Sémantique</span>
                         </div>
-                        <div class="color-control">
-                            <label>Fond</label>
-                            <input type="color" id="color-bg" value="#050508">
+                        <div class="temperature-icon" id="temp-icon">❄️</div>
+                    </div>
+                    
+                    <div class="feedback-word-container">
+                        <h2 class="feedback-word" id="feedback-word">---</h2>
+                    </div>
+                    
+                    <div class="score-container">
+                        <div class="score-label">Score de proximité</div>
+                        <div class="score-value" id="score-value">0.00%</div>
+                    </div>
+                    
+                    <div class="progress-track">
+                        <div class="progress-indicator" id="progress-indicator"></div>
+                    </div>
+                    
+                    <div class="feedback-status">
+                        <span class="status-message" id="status-message">En attente d'une tentative...</span>
+                    </div>
+                </div>
+
+                <!-- Zone de saisie -->
+                <div class="input-card">
+                    <form id="guess-form" class="input-form">
+                        <div class="input-container">
+                            <input 
+                                type="text" 
+                                id="guess-input" 
+                                class="guess-input"
+                                placeholder="Entrez votre mot..."
+                                autocomplete="off"
+                                spellcheck="false"
+                                maxlength="30"
+                            >
+                            <button type="submit" class="submit-button" id="submit-button" aria-label="Valider">
+                                <span class="material-symbols-outlined">arrow_forward</span>
+                                <span class="button-ripple"></span>
+                            </button>
+                        </div>
+                        <div class="autocomplete-container hidden" id="autocomplete-container"></div>
+                    </form>
+                    
+                    <div class="connection-status">
+                        <div class="status-indicator" id="connection-status">
+                            <span class="status-dot online"></span>
+                            <span class="status-text">Connecté</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <span class="setting-name">Synthèse Audio</span>
-                        <small>Sons procéduraux</small>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="setting-audio">
-                        <span class="slider"></span>
-                    </label>
+                <!-- Tentatives récentes -->
+                <div class="recent-attempts-container">
+                    <h3 class="section-title">Tentatives récentes</h3>
+                    <div class="attempts-list" id="recent-attempts"></div>
                 </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <span class="setting-name">Retour Haptique</span>
-                        <small>Vibrations (Mobile)</small>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="setting-haptic">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <span class="setting-name">Effets Visuels</span>
-                        <small>Nebula & Particules</small>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="setting-anim">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-
-                <div class="setting-group-vertical">
-                    <span class="setting-name">Thème Interface</span>
-                    <div class="theme-selector">
-                        <button class="theme-btn active" data-theme="auto">AUTO</button>
-                        <button class="theme-btn" data-theme="dark">SOMBRE</button>
-                        <button class="theme-btn" data-theme="light">CLAIR</button>
-                    </div>
-                </div>
-
-                <div class="setting-actions">
-                    <button id="btn-reset" class="danger-btn">RÉINITIALISER TOUTES LES DONNÉES</button>
-                </div>
-            </div>
-            
-            <div class="credits">
-                <p>LEXICORE V6.1 | HYBRID ENGINE</p>
-                <p>Powered by Datamuse & FreeDict API</p>
             </div>
         </section>
-    </main>
 
-    <nav class="system-nav glass-panel">
-        <button class="nav-btn active" data-target="view-terminal">
-            <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-            <span class="nav-label">TERMINAL</span>
+        <!-- Vue Historique -->
+        <section id="view-history" class="view">
+            <div class="top-app-bar">
+                <div class="app-bar-content">
+                    <h2 class="view-title">Historique</h2>
+                </div>
+            </div>
+
+            <div class="view-content">
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <span class="material-symbols-outlined">casino</span>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Tentatives</div>
+                            <div class="stat-value" id="stat-attempts">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <span class="material-symbols-outlined">trending_up</span>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Meilleur</div>
+                            <div class="stat-value" id="stat-best">0%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <span class="material-symbols-outlined">functions</span>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Moyenne</div>
+                            <div class="stat-value" id="stat-average">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="history-section">
+                    <h3 class="section-title">Cette partie</h3>
+                    <div class="history-list" id="history-list">
+                        <div class="empty-state">
+                            <span class="material-symbols-outlined">history</span>
+                            <p>Aucune tentative pour le moment</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Vue Statistiques -->
+        <section id="view-stats" class="view">
+            <div class="top-app-bar">
+                <div class="app-bar-content">
+                    <h2 class="view-title">Statistiques</h2>
+                </div>
+            </div>
+
+            <div class="view-content">
+                <div class="filter-chips">
+                    <button class="filter-chip active" data-period="all">
+                        <span>Tout</span>
+                        <span class="chip-ripple"></span>
+                    </button>
+                    <button class="filter-chip" data-period="week">
+                        <span>7 jours</span>
+                        <span class="chip-ripple"></span>
+                    </button>
+                    <button class="filter-chip" data-period="month">
+                        <span>30 jours</span>
+                        <span class="chip-ripple"></span>
+                    </button>
+                </div>
+
+                <div class="stats-overview">
+                    <div class="overview-card primary">
+                        <div class="overview-icon">
+                            <span class="material-symbols-outlined">emoji_events</span>
+                        </div>
+                        <div class="overview-content">
+                            <div class="overview-value" id="stats-wins">0</div>
+                            <div class="overview-label">Victoires</div>
+                            <div class="overview-detail" id="stats-win-rate">0% de réussite</div>
+                        </div>
+                    </div>
+
+                    <div class="overview-card">
+                        <div class="overview-icon">
+                            <span class="material-symbols-outlined">edit_note</span>
+                        </div>
+                        <div class="overview-content">
+                            <div class="overview-value" id="stats-words">0</div>
+                            <div class="overview-label">Mots trouvés</div>
+                            <div class="overview-detail" id="stats-unique">0 uniques</div>
+                        </div>
+                    </div>
+
+                    <div class="overview-card">
+                        <div class="overview-icon">
+                            <span class="material-symbols-outlined">schedule</span>
+                        </div>
+                        <div class="overview-content">
+                            <div class="overview-value" id="stats-time">0min</div>
+                            <div class="overview-label">Temps de jeu</div>
+                            <div class="overview-detail" id="stats-avg-time">~0min par partie</div>
+                        </div>
+                    </div>
+
+                    <div class="overview-card">
+                        <div class="overview-icon">
+                            <span class="material-symbols-outlined">local_fire_department</span>
+                        </div>
+                        <div class="overview-content">
+                            <div class="overview-value" id="stats-streak">0</div>
+                            <div class="overview-label">Série actuelle</div>
+                            <div class="overview-detail" id="stats-best-streak">Record: 0 jours</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="achievements-section">
+                    <h3 class="section-title">
+                        <span class="material-symbols-outlined">stars</span>
+                        Succès
+                    </h3>
+                    <div class="achievements-grid" id="achievements-grid"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Vue Paramètres -->
+        <section id="view-settings" class="view">
+            <div class="top-app-bar">
+                <div class="app-bar-content">
+                    <h2 class="view-title">Paramètres</h2>
+                </div>
+            </div>
+
+            <div class="view-content">
+                <div class="settings-group">
+                    <h3 class="group-title">Apparence</h3>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-title">Thème</div>
+                            <div class="setting-description">Choisir le mode d'affichage</div>
+                        </div>
+                        <div class="theme-selector">
+                            <button class="theme-button active" data-theme="auto">
+                                <span class="material-symbols-outlined">brightness_auto</span>
+                                <span>Auto</span>
+                                <span class="button-ripple"></span>
+                            </button>
+                            <button class="theme-button" data-theme="light">
+                                <span class="material-symbols-outlined">light_mode</span>
+                                <span>Clair</span>
+                                <span class="button-ripple"></span>
+                            </button>
+                            <button class="theme-button" data-theme="dark">
+                                <span class="material-symbols-outlined">dark_mode</span>
+                                <span>Sombre</span>
+                                <span class="button-ripple"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-title">Couleur principale</div>
+                            <div class="setting-description">Personnaliser l'accentuation</div>
+                        </div>
+                        <div class="color-palette">
+                            <button class="color-swatch active" data-color="#6750A4" style="--swatch-color: #6750A4">
+                                <span class="button-ripple"></span>
+                            </button>
+                            <button class="color-swatch" data-color="#006A6A" style="--swatch-color: #006A6A">
+                                <span class="button-ripple"></span>
+                            </button>
+                            <button class="color-swatch" data-color="#984061" style="--swatch-color: #984061">
+                                <span class="button-ripple"></span>
+                            </button>
+                            <button class="color-swatch" data-color="#006E26" style="--swatch-color: #006E26">
+                                <span class="button-ripple"></span>
+                            </button>
+                            <button class="color-swatch" data-color="#8B5000" style="--swatch-color: #8B5000">
+                                <span class="button-ripple"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3 class="group-title">Expérience</h3>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-title">Effets sonores</div>
+                            <div class="setting-description">Sons lors des interactions</div>
+                        </div>
+                        <div class="switch-container">
+                            <input type="checkbox" id="setting-audio" class="switch-input" checked>
+                            <label for="setting-audio" class="switch-label">
+                                <span class="switch-track"></span>
+                                <span class="switch-thumb"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-title">Vibrations</div>
+                            <div class="setting-description">Retour haptique (mobile)</div>
+                        </div>
+                        <div class="switch-container">
+                            <input type="checkbox" id="setting-haptic" class="switch-input" checked>
+                            <label for="setting-haptic" class="switch-label">
+                                <span class="switch-track"></span>
+                                <span class="switch-thumb"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-title">Animations</div>
+                            <div class="setting-description">Transitions et mouvements</div>
+                        </div>
+                        <div class="switch-container">
+                            <input type="checkbox" id="setting-animations" class="switch-input" checked>
+                            <label for="setting-animations" class="switch-label">
+                                <span class="switch-track"></span>
+                                <span class="switch-thumb"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3 class="group-title">Données</h3>
+                    
+                    <button class="danger-button" id="btn-reset">
+                        <span class="material-symbols-outlined">delete_forever</span>
+                        <span>Réinitialiser toutes les données</span>
+                        <span class="button-ripple"></span>
+                    </button>
+                </div>
+
+                <div class="app-info">
+                    <div class="info-row">
+                        <span class="material-symbols-outlined">info</span>
+                        <span>Version 7.0.0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="material-symbols-outlined">code</span>
+                        <span>Material You Design</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="material-symbols-outlined">api</span>
+                        <span>Datamuse & FreeDict API</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navigation-bar">
+        <button class="nav-item active" data-view="view-game">
+            <span class="material-symbols-outlined">videogame_asset</span>
+            <span class="nav-label">Jouer</span>
+            <span class="nav-indicator"></span>
+            <span class="button-ripple"></span>
         </button>
-        <button class="nav-btn" data-target="view-logs">
-            <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-            <span class="nav-label">LOGS</span>
+        <button class="nav-item" data-view="view-history">
+            <span class="material-symbols-outlined">history</span>
+            <span class="nav-label">Historique</span>
+            <span class="nav-indicator"></span>
+            <span class="button-ripple"></span>
         </button>
-        <button class="nav-btn" data-target="view-system">
-            <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            <span class="nav-label">SYSTÈME</span>
+        <button class="nav-item" data-view="view-stats">
+            <span class="material-symbols-outlined">analytics</span>
+            <span class="nav-label">Stats</span>
+            <span class="nav-indicator"></span>
+            <span class="button-ripple"></span>
+        </button>
+        <button class="nav-item" data-view="view-settings">
+            <span class="material-symbols-outlined">settings</span>
+            <span class="nav-label">Réglages</span>
+            <span class="nav-indicator"></span>
+            <span class="button-ripple"></span>
         </button>
     </nav>
 
-    <div id="victory-modal" class="modal hidden">
-        <div class="modal-content glass-panel victory-style">
-            <div class="victory-header">
-                <h2>SÉQUENCE VALIDÉE</h2>
+    <!-- Modal Victoire -->
+    <div class="modal-overlay hidden" id="victory-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 class="modal-title">Bravo ! 🎉</h2>
             </div>
             
-            <div class="victory-word" id="victory-word">---</div>
-            
-            <div class="victory-details-container">
-                <div class="word-definition" id="victory-definition">
-                    <span class="loader-text">Chargement définition...</span>
-                </div>
+            <div class="modal-content">
+                <div class="victory-word" id="victory-word">EXEMPLE</div>
                 
                 <div class="victory-stats">
-                    <div class="v-stat">
-                        <span class="v-label">Essais</span>
-                        <span class="v-val" id="v-attempts">0</span>
+                    <div class="victory-stat">
+                        <span class="material-symbols-outlined">casino</span>
+                        <div class="stat-info">
+                            <div class="stat-number" id="victory-attempts">0</div>
+                            <div class="stat-text">tentatives</div>
+                        </div>
                     </div>
-                    <div class="v-stat">
-                        <span class="v-label">Précision</span>
-                        <span class="v-val" id="v-accuracy">0%</span>
+                    <div class="victory-stat">
+                        <span class="material-symbols-outlined">percent</span>
+                        <div class="stat-info">
+                            <div class="stat-number" id="victory-accuracy">0%</div>
+                            <div class="stat-text">précision</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="similarity-path">
-                    <h4>Mots les plus proches trouvés :</h4>
-                    <div id="victory-top3" class="top3-list"></div>
+                <div class="definition-container">
+                    <h4 class="definition-title">Définition</h4>
+                    <p class="definition-text" id="victory-definition">Chargement...</p>
+                </div>
+
+                <div class="top-words-container">
+                    <h4 class="top-words-title">Meilleurs mots</h4>
+                    <div class="top-words-list" id="victory-top-words"></div>
                 </div>
             </div>
-
+            
             <div class="modal-actions">
-                <button id="close-victory" class="action-btn primary">CONTINUER</button>
+                <button class="primary-button" id="btn-close-victory">
+                    <span>Continuer</span>
+                    <span class="button-ripple"></span>
+                </button>
             </div>
         </div>
-        <div class="modal-backdrop"></div>
     </div>
 
-    <div id="mode-modal" class="modal hidden">
-        <div class="modal-content glass-panel extended-modal">
-            <h2>SÉLECTION DU MODE</h2>
-            <div class="mode-options">
-                <button class="mode-card" data-mode="daily">
-                    <span class="mode-title">QUOTIDIEN (Daily)</span>
-                    <span class="mode-desc">Le mot officiel du jour.</span>
-                </button>
-                <button class="mode-card" data-mode="training">
-                    <span class="mode-title">ENTRAÎNEMENT</span>
-                    <span class="mode-desc">Infini. Juste pour pratiquer.</span>
+    <!-- Modal Sélection Mode -->
+    <div class="modal-overlay hidden" id="mode-modal">
+        <div class="modal-container large">
+            <div class="modal-header">
+                <h2 class="modal-title">Sélectionner un mode</h2>
+                <button class="icon-button" id="btn-close-mode">
+                    <span class="material-symbols-outlined">close</span>
+                    <span class="button-ripple"></span>
                 </button>
             </div>
-            <hr class="modal-divider">
-            <h3>ARCHIVES TEMPORELLES</h3>
-            <div class="archive-grid" id="archive-grid"></div>
-            <button id="close-mode-modal" class="text-btn">FERMER</button>
+            
+            <div class="modal-content">
+                <div class="mode-cards">
+                    <button class="mode-card" data-mode="daily">
+                        <div class="mode-icon">
+                            <span class="material-symbols-outlined">today</span>
+                        </div>
+                        <div class="mode-info">
+                            <div class="mode-name">Quotidien</div>
+                            <div class="mode-description">Le mot officiel du jour</div>
+                        </div>
+                        <span class="button-ripple"></span>
+                    </button>
+                    
+                    <button class="mode-card" data-mode="training">
+                        <div class="mode-icon">
+                            <span class="material-symbols-outlined">fitness_center</span>
+                        </div>
+                        <div class="mode-info">
+                            <div class="mode-name">Entraînement</div>
+                            <div class="mode-description">Pratique illimitée</div>
+                        </div>
+                        <span class="button-ripple"></span>
+                    </button>
+                </div>
+
+                <div class="divider">
+                    <span>Archives</span>
+                </div>
+
+                <div class="archive-calendar" id="archive-calendar"></div>
+            </div>
         </div>
-        <div class="modal-backdrop"></div>
     </div>
 
     <script src="script.js"></script>
     <script>
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .catch(err => console.log('Service Worker error:', err));
+        }
     </script>
 </body>
 </html>
