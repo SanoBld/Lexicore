@@ -304,3 +304,197 @@ input:checked + .slider:before { transform: translateX(20px); }
 /* Anim */
 .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
 @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+
+/* --- MODE SELECTION CARDS --- */
+.mode-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.mode-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Effet de reflet glassmorphism au survol */
+.mode-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, var(--glass-shine), transparent);
+    transition: 0.5s;
+}
+
+.mode-card:hover::before {
+    left: 100%;
+}
+
+.mode-card:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.mode-card.active {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+}
+
+.mode-title {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.mode-desc {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+/* Thème Clair */
+body.light-theme .mode-card {
+    background: rgba(0, 0, 0, 0.03);
+}
+body.light-theme .mode-card:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* --- ARCHIVES TEMPORELLES (GRID STYLE) --- */
+.archive-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 5 colonnes pour un aspect compact */
+    gap: 12px;
+    margin-top: 20px;
+    padding: 10px 0;
+}
+
+.archive-day {
+    aspect-ratio: 1; /* Carré parfait */
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+/* État : Jour résolu (Succès) */
+.archive-day.solved {
+    border-color: var(--success);
+    color: var(--success);
+    background: rgba(46, 213, 115, 0.05);
+    box-shadow: inset 0 0 10px rgba(46, 213, 115, 0.1);
+}
+
+.archive-day.solved .status-dot {
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+}
+
+/* État : Jour échoué (Optionnel) */
+.archive-day.failed {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+/* Petit point indicateur sous le numéro */
+.status-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    margin-top: 4px;
+    transition: 0.3s;
+}
+
+/* Hover & Animation */
+.archive-day:hover {
+    transform: scale(1.05);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.archive-day:active {
+    transform: scale(0.95);
+}
+
+/* Adaptation Thème Clair */
+body.light-theme .archive-day {
+    background: rgba(0, 0, 0, 0.03);
+    color: var(--text-secondary);
+}
+
+body.light-theme .archive-day:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--accent);
+}
+
+/* Animation d'apparition */
+@keyframes popIn {
+    0% { 
+        opacity: 0; 
+        transform: scale(0.8) translateY(10px); 
+        filter: blur(5px);
+    }
+    100% { 
+        opacity: 1; 
+        transform: scale(1) translateY(0); 
+        filter: blur(0);
+    }
+}
+
+.archive-day {
+    /* ... tes styles précédents ... */
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.archive-day {
+    /* ... garde tes styles précédents ... */
+    padding: 8px 4px;
+    min-height: 70px; /* On donne un peu plus de place en hauteur */
+}
+
+.archive-best-word {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-top: 4px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Si le jour est réussi, on met le mot en succès */
+.archive-day.solved .archive-best-word {
+    color: var(--success);
+}

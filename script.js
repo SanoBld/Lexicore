@@ -683,14 +683,26 @@ function setupEventListeners() {
 
 function buildArchiveGrid() {
     const grid = document.getElementById('archive-grid');
-    if(!grid) return;
     grid.innerHTML = '';
+    
     for (let i = 0; i <= CORE.currentDayId; i++) {
         const div = document.createElement('div');
         div.className = 'archive-day';
-        if (CORE.progress[`day_${i}`]?.status === 'WON') div.classList.add('solved');
+        
+        // Ajout du délai progressif (50ms entre chaque case)
+        div.style.animationDelay = `${i * 0.05}s`;
+        
+        if (CORE.progress[`day_${i}`]?.status === 'WON') {
+            div.classList.add('solved');
+        }
+        
         div.innerHTML = `${i}<div class="status-dot"></div>`;
-        div.onclick = () => { if(UI.modalMode) UI.modalMode.classList.add('hidden'); setGameMode(`archive_${i}`); };
+        
+        div.onclick = () => { 
+            UI.modalMode.classList.add('hidden'); 
+            setGameMode(`archive_${i}`); 
+        };
+        
         grid.appendChild(div);
     }
 }
